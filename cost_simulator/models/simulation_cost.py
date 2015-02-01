@@ -16,7 +16,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, exceptions, api, _
+from openerp import models, fields, exceptions, api
 from openerp.addons import decimal_precision as dp
 import time
 
@@ -45,8 +45,7 @@ class SimulationCost(models.Model):
                                                 ('historical_ok', '=', True)],
                                             default=False)
     subtotal5_purchase = fields.Float('Total Purchase', readonly=True,
-                                      digits_compute=
-                                      dp.get_precision('Purchase Price'))
+        digits_compute=dp.get_precision('Purchase Price'))
     subtotal5_sale = fields.Float('Total Sale', readonly=True,
                                   digits_compute=
                                   dp.get_precision('Purchase Price'))
