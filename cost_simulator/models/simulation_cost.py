@@ -16,7 +16,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, exceptions, api
+from openerp import models, fields, exceptions, api, _
 from openerp.addons import decimal_precision as dp
 import time
 
@@ -86,7 +86,7 @@ class SimulationCost(models.Model):
     net_cost = fields.Float('Net Cost', readonly=True,
                             digits_compute=dp.get_precision('Purchase Price'))
     net_cost_percentage = fields.Float('Net Cost %', digits=(3, 2),
-                                      readonly=True)
+                                       readonly=True)
     gross_margin = fields.Float('Gross Margin', readonly=True,
                                 digits_compute=dp.get_precision(
                                     'Purchase Price'))
