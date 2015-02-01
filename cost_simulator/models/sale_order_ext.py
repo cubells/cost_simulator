@@ -16,30 +16,22 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
-from openerp.tools.translate import _
+from openerp import models, fields, exceptions, _
 import time
 from openerp import netsvc
 
 
-class SaleOrder(orm.Model):
+class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    _columns = {
-        # Campo para saber con que costes de simulación está relacionada
-        'simulation_cost_ids':
-            fields.many2many('simulation.cost', 'simucost_saleorder_rel',
-                             'sale_order_id', 'simulation_cost_id',
-                             'Simulation Costs', readonly=True),
-        # Campo para relacionar el proyecto con el pedido de venta, la relacion
-        # es de 1 a 1
-        'project2_id': fields.many2one('project.project', 'Project'),
-        # Campo para saber que pedidos de compra se han generado a partir de
-        # este pedido de venta
-        'purchase_order_ids':
-            fields.one2many('purchase.order', 'sale_order_id',
-                            "Purchase Orders"),
-    }
+    simulation_cost_ids = fields.Many2many('simulation.cost',
+                                           'simucost_saleorder_rel',
+                                           'sale_order_id',
+                                           'simulation_cost_id',
+                                           'Simulation Costs', readonly=True)
+    project2_id = fields.Many2one('project.project', 'Project')
+    purchase_order_ids = fields.One2many('purchase.order', 'sale_order_id',
+                                         'Purchase Orders')
 
     # Heredo la función que crea albaranes y abastecimientos
     def _create_pickings_and_procurements(self, cr, uid, order, order_lines,
@@ -155,8 +147,8 @@ class SaleOrder(orm.Model):
                 if w_maxid == 0:
                     # Si no he encontrado una simulación de coste
                     # historificada para ese pedido de venta
-                    raise orm.except_orm(_('Project Creation Error'),
-                                         _('Simulation Cost not found'))
+                    raise exceptions.Warning(_('Project Creation Error'),
+                                             _('Simulation Cost not found'))
                 else:
                     # Si no he encontrado una simulación de coste activa para
                     # ese pedido de venta, me quedo con el id de la simulación
@@ -486,9 +478,9 @@ class SaleOrder(orm.Model):
                     purchase_type_ids = purchase_type_obj.search(
                         cr, uid, condition, context=context)
                     if not purchase_type_ids:
-                        raise orm.except_orm(_('Purchase Order Error'),
-                                             _('Others literal not found in '
-                                               'Table Purchase Type'))
+                        raise exceptions.Warning(_('Purchase Order Error'),
+                                                 _('Others literal not found '
+                                                   'in Table Purchase Type'))
                 purchase_type = purchase_type_obj.browse(cr, uid,
                                                          purchase_type_ids[0],
                                                          context=context)
@@ -525,8 +517,9 @@ class SaleOrder(orm.Model):
                 purchase_order_line_ids = purchase_line_obj.search(
                     cr, uid, [('order_id', '=', pc)], context=context)
                 if not purchase_order_line_ids:
-                    raise orm.except_orm(_('Purchase Order Creation Error'),
-                                         _('Purchase Order Line not found(2)'))
+                    raise exceptions.Warning(
+                        _('Purchase Order Creation Error'),
+                        _('Purchase Order Line not found(2)'))
                 else:
                     purchase_order_line_id = purchase_order_line_ids[0]
                 purchaseorder_id = pc
@@ -602,9 +595,9 @@ class SaleOrder(orm.Model):
                 # Si no hay proveedores definidos para el producto, muestro
                 # el error
                 name = simulation_cost_line.product_id.name
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('You must define one supplier for the '
-                                       '  product: %s') % name)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('You must define one supplier for '
+                                           'the product: %s') % name)
             else:
                 # TRATO TODOS LOS PROVEEDORES ENCONTRADOS PARA EL PRODUCTO,
                 # CREARE UN PEDIDO DE COMPRA PARA CADA PROVEEDOR DE ESE
@@ -703,10 +696,10 @@ class SaleOrder(orm.Model):
                             purchase_type_ids = purchase_type_obj.search(
                                 cr, uid, condition, context=context)
                             if not purchase_type_ids:
-                                raise orm.except_orm(_('Purchase Order Error'),
-                                                     _('Others literal not '
-                                                       'found in Table '
-                                                       'Purchase Type'))
+                                raise exceptions.Warning(
+                                    _('Purchase Order Error'),
+                                    _('Others literal not found in Table '
+                                      'Purchase Type'))
                         purchase_type = purchase_type_obj.browse(
                             cr, uid, purchase_type_ids[0], context=context)
                         # COJO LA SECUENCIA
@@ -744,10 +737,9 @@ class SaleOrder(orm.Model):
                         purchase_line_ids = purchase_line_obj.search(
                             cr, uid, [('order_id', '=', pc)], context=context)
                         if not purchase_line_ids:
-                            raise orm.except_orm(_('Purchase Order Creation '
-                                                   'Error'),
-                                                 _('Purchase Order Line not '
-                                                   'found(2)'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Purchase Order Line not found(2)'))
                         else:
                             purchase_order_line_id = purchase_line_ids[0]
                         purchaseorder_id = pc
@@ -821,9 +813,9 @@ class SaleOrder(orm.Model):
             purchase_type_ids = purchase_type_obj.search(cr, uid, condition,
                                                          context=context)
             if not purchase_type_ids:
-                raise orm.except_orm(_('Purchase Order Error'),
-                                     _('Purchase literal not found in Table'
-                                       ' Purchase Type'))
+                raise exceptions.Warning(_('Purchase Order Error'),
+                                         _('Purchase literal not found in '
+                                           'Table Purchase Type'))
             else:
                 purchase_type = purchase_type_obj.browse(
                     cr, uid, purchase_type_ids[0], context=context)
@@ -890,9 +882,9 @@ class SaleOrder(orm.Model):
         # Si no encuentro el subproyecto, lo creo
         if w_found == 0:
             if w_type == 3:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Subaccount analytic account not '
-                                       'found, literal: %s') % w_literal)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('Subaccount analytic account not '
+                                           'found, literal: %s') % w_literal)
             else:
                 line = {'name': w_literal,
                         'parent_id':  w_account_analytic_account_id,
@@ -1000,9 +992,9 @@ class SaleOrder(orm.Model):
             sub_account_analytic_account_id = sub_account_analytic_account
         # Si no encuentro el subproyecto, lo creo
         if w_found == 0:
-            raise orm.except_orm(_('Purchase Order Creation Error'),
-                                 _('Subaccount analytic account not found, '
-                                   'literal: %s') % w_literal)
+            raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                     _('Subaccount analytic account not found,'
+                                       ' literal: %s') % w_literal)
         if w_type == 1:
             # SI LA LINEA DEL PEDIDO DE VENTA NO VIENE DE UNA LINEA DE
             # SIMULACION DE COSTES, NO TENGO MANERA DE ASIGNARLA A NINGUNA
@@ -1032,9 +1024,10 @@ class SaleOrder(orm.Model):
             sub_account_analytic_account_id2 = account_ids3[0]
         else:
             if w_type == 3:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Subaccount Analytic for tab not '
-                                       'found(1), literal: %s') % w_literal2)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('Subaccount Analytic for tab not '
+                                           'found(1), literal: %s')
+                                         % w_literal2)
             else:
                 line = {'name': w_literal2,
                         'parent_id':  sub_account_analytic_account_id,
@@ -1162,9 +1155,10 @@ class SaleOrder(orm.Model):
         # Si no encuentro el subproyecto, lo creo
         if w_found == 0:
             if w_type == 3:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Subaccount Analytic account not'
-                                       ' found, for literal: %s') % w_literal)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('Subaccount Analytic account not '
+                                           'found, for literal: %s')
+                                         % w_literal)
             else:
                 line = {'name': w_literal,
                         'parent_id':  w_account_analytic_account_id,
@@ -1285,14 +1279,10 @@ class SaleOrder(orm.Model):
         return False
 
 
-class SaleOrderLine(orm.Model):
+class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    _columns = {
-        # Este campo estaba de CTA pero ahora no se usara
-        'simulation_cost_line_ids':
-            fields.one2many('simulation.cost.line', 'sale_order_line_id',
-                            'Simulation Costs Lines'),
-        # Campo para saber si tengo que generar abastecimeintos
-        'clear_procurement': fields.boolean('Crear Procurement'),
-    }
+    simulation_cost_line_ids = fields.One2many('simulation.cost.line',
+                                               'sale_order_line_id',
+                                               'Simulation Costs Lines')
+    clear_procurement = fields.Boolean('Crear Procurement')

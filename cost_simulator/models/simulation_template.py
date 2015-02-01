@@ -15,63 +15,55 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
-from openerp.osv import orm, fields
+
+from openerp import models, fields, api, _
 from openerp.addons import decimal_precision as dp
 
 
-class SimulationTemplate(orm.Model):
-
+class SimulationTemplate(models.Model):
     _name = 'simulation.template'
     _description = 'Simulation Template'
 
-    _columns = {
-        'name': fields.char('Name', size=64, required="True", select=1),
-        # Producto de la plantilla
-        'template_product_id': fields.many2one('product.product',
-                                               'Product for sale'),
-        'others_template_lines_ids':
-            fields.one2many('simulation.template.line', 'template_id',
-                            'Others Lines',
-                            domain=[('type_cost', '=', 'Others')]),
-    }
+    name = fields.Char('Name', size=64, required="True", select=True)
+    template_product_id = fields.Many2one('product.product',
+                                          'Product for sale')
+    others_template_lines_ids = fields.One2many('simulation.template.line',
+                                                'template_id',
+                                                'Others Lines')
 
 
-class SimulationTemplateLine(orm.Model):
+class SimulationTemplateLine(models.Model):
     _name = 'simulation.template.line'
     _description = 'Simulation Template Line'
 
-    _columns = {
-        'template_id': fields.many2one('simulation.template', 'Template',
-                                       ondelete='cascade'),
-        'product_id': fields.many2one('product.product', 'Product',
-                                      required=True),
-        'name': fields.char('Name', size=64, required=True),
-        'description': fields.text('Description'),
-        'amortization_rate': fields.float('Amortization Rate', digits=(3, 2)),
-        'indirect_cost_rate': fields.float('Indirect Cost Rate',
-                                           digits=(3, 2)),
-        'amount': fields.float('Amount',
-                               digits_compute=dp.get_precision('Product UoM')),
-        'uom_id': fields.many2one('product.uom', 'Default Unit Of Measure',
-                                  required=True),
-        'type_cost': fields.selection([('Others', 'Others')], 'Type of Cost'),
-        'type2': fields.selection([('fixed', 'Fixed'),
-                                   ('variable', 'Variable')],
-                                  'Fixed/Variable'),
-        'type3': fields.selection([('marketing', 'Marketing'),
-                                   ('sale', 'Sale'),
-                                   ('production', 'Production'),
-                                   ('generalexpenses', 'General Expenses'),
-                                   ('structureexpenses', 'Structure Expenses'),
-                                   ('amortizationexpenses',
-                                    'Amortization Expenses')],
-                                  'Cost Category'),
-    }
+    template_id = fields.Many2one('simulation.template', 'Template')
+    product_id = fields.Many2one('product.product', 'Product', required=True)
+    name = fields.Char('Name', size=64, required=True)
+    description = fields.Text('Description')
+    amortization_rate = fields.Float('Amortization Rate', digits=(3, 2))
+    indirect_cost_rate = fields.Float('Indirect Cost Rate', digits=(3, 2))
+    amount = fields.Float('Amount',
+                          digits_compute=dp.get_precision('Product UoM'))
+    uom_id = fields.Many2one('product.uom', 'Default Unit Of Measure',
+                             required=True)
+    type_cost = fields.Selection([('Others', 'Others')], 'Type of Cost')
+    type2 = fields.Selection([('fixed', 'Fixed'),
+                              ('variable', 'Variable')],
+                             'Fixed/Variable')
+    type3 = fields.Selection([('marketing', 'Marketing'),
+                              ('sale', 'Sale'),
+                              ('production', 'Production'),
+                              ('generalexpenses', 'General Expenses'),
+                              ('structureexpenses', 'Structure Expenses'),
+                              ('amortizationexpenses',
+                               'Amortization Expenses')],
+                             'Cost Category')
     _defaults = {
         'type_cost': lambda self, cr, uid, c: c.get('type_cost', False),
         'amount': 1.0,
     }
 
+    @api.v7
     def onchange_product(self, cr, uid, ids, product_id, type, context=None):
         product_obj = self.pool['product.product']
         if product_id and type:
@@ -84,6 +76,7 @@ class SimulationTemplateLine(orm.Model):
                    }
             return {'value': res}
 
+    @api.v7
     def onchange_type_cost(self, cr, uid, ids, type, context=None):
         res = {'product_id': '',
                'name': '',

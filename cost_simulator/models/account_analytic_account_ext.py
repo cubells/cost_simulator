@@ -16,40 +16,38 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, fields, api
 from openerp.addons import decimal_precision as dp
 
 
-class AccountAnalyticAccountaccount(orm.Model):
+class AccountAnalyticAccountaccount(models.Model):
     _inherit = 'account.analytic.account'
 
-    def name_get(self, cr, uid, ids, context=None):
-        if not ids:
+    @api.multi
+    @api.depends('name')
+    def name_get(self):
+        if not self.ids:
             return []
         res = []
-        for account in self.browse(cr, uid, ids, context=context):
+        for account in self:
             data = []
-            acc = account
-            if acc:
-                data.insert(0, acc.name)
+            data.insert(0, account.name)
             data = ' / '.join(data)
             res.append((account.id, data))
         return res
 
-    _columns = {
-        # Balance en simulación
-        'estimated_balance':
-            fields.float('Estimated Balance', readonly=True,
-                         digits_compute=dp.get_precision('Account')),
-        # Precio de compra en simulación
-        'estimated_cost':
-            fields.float('Estimated Cost', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Precio de venta en simulación
-        'estimated_sale':
-            fields.float('Estimated Sale', readonly=True,
-                         digits_compute=dp.get_precision('Sale Price')),
-    }
-
-    def button_analytical_structure_update_costs(self, cr, uid, ids, *args):
-        return True
+    estimated_balance = fields.Float(
+        'Estimated Balance', readonly=True, digits_compute=dp.get_precision(
+            'Account'
+        )
+    )
+    estimated_cost = fields.Float(
+        'Estimated Cost', readonly=True, digits_compute=dp.get_precision(
+            'Purchase Price'
+        )
+    )
+    estimated_sale = fields.Float(
+        'Estimated Sale', readonly=True, digits_compute=dp.get_precision(
+            'Sale Price'
+        )
+    )

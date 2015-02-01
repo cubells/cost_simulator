@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="1">
+        <!-- Sequences for Cost Serial -->
+        <record id="seq_type_cost_serial" model="ir.sequence.type">
+            <field name="name">Cost Serial Sequence</field>
+            <field name="code">cost_serial</field>
+        </record>
+        <record id="seq_cost_serial" model="ir.sequence">
+            <field name="name">Cost Serial Sequence</field>
+            <field name="code">cost_serial</field>
+            <field name="prefix"></field>
+            <field name="padding">1</field>
+        </record>
+    </data>
+</openerp>

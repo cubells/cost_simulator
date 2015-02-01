@@ -15,38 +15,24 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
-from openerp.osv import orm, fields
+
+from openerp import models, fields
 
 
-class Project(orm.Model):
+class Project(models.Model):
     _inherit = 'project.project'
 
-    _columns = {
-        # Campo para saber los pedidos de compra relacionados con el
-        # subsubprojecto
-        'purchase_order_ids': fields.one2many('purchase.order', 'project2_id',
-                                              'Project Purchase Orders'),
-        # Campo para saber con que pedido de venta esta relacionado el
-        # proyecto
-        'sale_order_ids': fields.one2many('sale.order', 'project2_id',
-                                          'Project tasks'),
-        # Campo para saber con que siulcion esta relacionado el projecto
-        'simulation_cost_id': fields.many2one('simulation.cost',
-                                              'Simulation Cost'),
-        # Campo para saber con que siulcion esta relacionado el subproyecto
-        'simulation_cost_id2': fields.many2one('simulation.cost',
-                                               'Simulation Cost'),
-        # Campo para saber si es un proyecto
-        'is_project': fields.boolean('Is Project'),
-        # Campo para saber los pedidos de compra relacionados con el proyecto
-        'purchase_order_ids2': fields.one2many('purchase.order', 'project3_id',
-                                               'Project Purchase Orders'),
-        # Campo para saber con que tareas esta relacionados con el proyecto
-        'task_ids2': fields.one2many('project.task', 'project3_id',
-                                     'Project Task'),
-        # Campo para saber si es un subprojecto
-        'is_subproject': fields.boolean('Is Subproject'),
-    }
+    purchase_order_ids = fields.One2many('purchase.order', 'project2_id',
+                                         'Project Purchase Orders')
+    sale_order_ids = fields.One2many('sale.order', 'project2_id',
+                                     'Project tasks')
+    simulation_cost_id = fields.Many2one('simulation.cost', 'Simulation Cost')
+    simulation_cost_id2 = fields.Many2one('simulation.cost', 'Simulation Cost')
+    is_project = fields.Boolean('Is Project')
+    purchase_order_ids2 = fields.One2many('purchase.order', 'project3_id',
+                                          'Project Purchase Orders')
+    task_ids2 = fields.One2many('project.task', 'project3_id', 'Project Task')
+    is_subproject = fields.Boolean('Is Subproject')
 
     def button_analytical_structure_update_costs(self, cr, uid, ids, *args):
         return True
@@ -56,16 +42,9 @@ class Project(orm.Model):
         return {'value': res}
 
 
-class ProjectTask(orm.Model):
+class ProjectTask(models.Model):
     _inherit = 'project.task'
 
-    _columns = {
-        # Nombre del producto de coste de la linea de simulación de costes
-        'cost_product_name': fields.char('Cost Product', size=64,
-                                         readonly=True),
-        # Nombre del producto de venta de la linea de simulación de costes
-        'sale_product_name': fields.char('Sale Product', size=64,
-                                         readonly=True),
-        # Campo para saber con que proyecto esta relacionado la tarea
-        'project3_id': fields.many2one('project.project', 'Project'),
-    }
+    cost_product_name = fields.Char('Cost Product', size=64, readonly=True)
+    sale_product_name = fields.Char('Sale Product', size=64, readonly=True)
+    project3_id = fields.Many2one('project.project', 'Project')

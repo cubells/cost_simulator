@@ -15,16 +15,12 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
-from openerp.osv import orm, fields
+
+from openerp import models, fields
 
 
-class ProductProduct(orm.Model):
+class ProductProduct(models.Model):
     _inherit = 'product.product'
 
-    _columns = {
-        # Tasa de amortizacion
-        'amortization_rate': fields.float('Amortization Rate', digits=(3, 2)),
-        # Tasa Costes Indirectos
-        'indirect_cost_rate': fields.float('Indirect Cost Rate',
-                                           digits=(3, 2)),
-    }
+    amortization_rate = fields.Float('Amortization Rate', digits=(3, 2))
+    indirect_cost_rate = fields.Float('Indirect Cost Rate', digits=(3, 2))

@@ -15,11 +15,11 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
-from openerp.osv import orm
-from openerp.tools.translate import _
+
+from openerp import models, fields, exceptions, _
 
 
-class PurchaseRequisition(orm.Model):
+class PurchaseRequisition(models.Model):
     _inherit = 'purchase.requisition'
 
     def make_purchase_order_avanzosc(self, cr, uid, ids, context=None):
@@ -45,9 +45,10 @@ class PurchaseRequisition(orm.Model):
                 if not supplierinfo_ids:
                     # Si no hay proveedores definidos para el producto, muestro
                     # el error
-                    raise orm.except_orm(_('Purchase Order Creation Error'),
-                                         _('You must define one supplier for '
-                                           'the product: %s') % product.name)
+                    raise exceptions.Warning(
+                        _('Purchase Order Creation Error'),
+                        _('You must define one supplier for the product: '
+                          '%s') % product.name)
                 else:
                     for supplierinfo_id in supplierinfo_ids:
                         supplierinfo = supplierinfo_obj.browse(
@@ -60,9 +61,9 @@ class PurchaseRequisition(orm.Model):
                         purchase_type_ids = purchase_type_obj.search(
                             cr, uid, condition, context=context)
                         if not purchase_type_ids:
-                            raise orm.except_orm(_('Purchase Order Creation '
-                                                   'Error'),
-                                                 _('Purchase Type NOT FOUND'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Purchase Type NOT FOUND'))
                         purchase_type = purchase_type_obj.browse(
                             cr, uid, purchase_type_ids[0], context=context)
                         condition = [('partner_id', '=', supplier.id),
@@ -158,18 +159,19 @@ class PurchaseRequisition(orm.Model):
                                                    rfq.partner_id.id or None
                                                    for rfq in
                                                    requisition.purchase_ids]):
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('You have already one %s purchase order'
-                                       ' for this partner, you must cancel '
-                                       'this purchase order to create a new '
-                                       'quotation.') % rfq.state)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('You have already one %s purchase '
+                                           'order for this partner, you must '
+                                           'cancel this purchase order to '
+                                           'create a new quotation.')
+                                         % requisition.state)
             location_id = requisition.warehouse_id.lot_input_id.id
             condition = [('name', '=', 'Purchase')]
             purchase_type_ids = purchase_type_obj.search(cr, uid, condition,
                                                          context=context)
             if not purchase_type_ids:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Purchase Type NOT FOUND'))
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('Purchase Type NOT FOUND'))
             purchase_type = purchase_type_obj.browse(
                 cr, uid, purchase_type_ids[0], context=context)
             code = purchase_type.sequence.code

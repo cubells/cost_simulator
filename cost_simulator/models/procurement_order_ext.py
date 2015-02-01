@@ -16,19 +16,16 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
-from openerp.tools.translate import _
+from openerp import models, fields, exceptions, _
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
-class ProcurementOrder(orm.Model):
+class ProcurementOrder(models.Model):
     _inherit = 'procurement.order'
 
-    _columns = {
-        'message': fields.char('Latest error', size=164,
-                               help='Exception occurred while computing '
-                               'procurement orders.'),
-    }
+    message = fields.Char('Latest error', size=164,
+                          help='Exception occurred while computing '
+                               'procurement orders.')
 
     def make_po(self, cr, uid, ids, context=None):
         res = {}
@@ -50,9 +47,9 @@ class ProcurementOrder(orm.Model):
             procurement_ids = self.search(cr, uid, condition, context=context,
                                           limit=1)
             if not procurement_ids:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Procurement Order with state RUNNING '
-                                       'not found'))
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('Procurement Order with state '
+                                           'RUNNING not found'))
             procurement2 = self.browse(cr, uid, procurement_ids[0],
                                        context=context)
             if procurement2.sale_line_id:
@@ -90,10 +87,9 @@ class ProcurementOrder(orm.Model):
                         if w_maxid == 0:
                             # Si no he encontrado una simulación de coste
                             # historificada para eses pedido de venta
-                            raise orm.except_orm(_('Purchase Order Creation'
-                                                   ' Error'),
-                                                 _('Simulation Cost not '
-                                                   'found'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Simulation Cost not found'))
                         else:
                             # Si no he encontrado una simulación de coste
                             # activa para ese pedido de venta, me quedo con el
@@ -125,9 +121,9 @@ class ProcurementOrder(orm.Model):
             if procurement2.sale_line_id:
                 if sale_order.simulation_cost_ids:
                     if not sale_order.project2_id:
-                        raise orm.except_orm(_('Purchase Order Creation '
-                                               'Error'),
-                                             _('Project not found'))
+                        raise exceptions.Warning(
+                            _('Purchase Order Creation Error'),
+                            _('Project not found'))
                     else:
                         # SI EL PEDIDO DE VENTA TIENE UN PROYECTO ASOCIADO,
                         # COJO SU ID
@@ -236,17 +232,18 @@ class ProcurementOrder(orm.Model):
                 sequence_ids = sequence_obj.search(cr, uid, condition,
                                                    context=context, limit=1)
                 if not sequence_ids:
-                    raise orm.except_orm(_('Purchase Order Creation Error'),
-                                         _('Purchase Order sequence not '
-                                           'found'))
+                    raise exceptions.Warning(
+                        _('Purchase Order Creation Error'),
+                        _('Purchase Order sequence not found'))
                 sequence = sequence_obj.browse(cr, uid, sequence_ids[0],
                                                context=context)
                 condition = [('sequence', '=', sequence.id)]
                 ptype_ids = purchase_type_obj.search(cr, uid, condition,
                                                      context=context, limit=1)
                 if not ptype_ids:
-                    raise orm.except_orm(_('Purchase Order Creation Error'),
-                                         _('Purchase Type not found'))
+                    raise exceptions.Warning(
+                        _('Purchase Order Creation Error'),
+                        _('Purchase Type not found'))
                 purchase_type = purchase_type_obj.browse(
                     cr, uid, ptype_ids[0], context=context)
                 code = purchase_type.sequence.code
@@ -267,9 +264,9 @@ class ProcurementOrder(orm.Model):
                 purchase_line_ids = purchase_line_obj.search(
                     cr, uid, [('order_id', '=', pc)], context=context)
                 if not purchase_line_ids:
-                    raise orm.except_orm(_('Purchase Order Creation Error'),
-                                         _('Purchase Order Line not '
-                                           'found(1)'))
+                    raise exceptions.Warning(
+                        _('Purchase Order Creation Error'),
+                        _('Purchase Order Line not found(1)'))
                 else:
                     purchase_order_line_id = purchase_line_ids[0]
                 purchaseorder_id = pc
@@ -360,14 +357,15 @@ class ProcurementOrder(orm.Model):
         else:
             # SI EL PRODUCTO NO VIENE CON UN PROVEEDOR EN CONCRETO, TRATO
             # TODOS SUS PROVEEDORES
-            supplierinfo_ids = supplierinfo_obj.search(
-                cr, uid, [('product_id', '=', product.id)], context=context)
+            supplierinfo_ids = supplierinfo_obj.search(cr, uid, [
+                ('product_id', '=', procurement.product.id)], context=context)
             if not supplierinfo_ids:
                 # Si no hay proveedores definidos para el producto, muestro el
                 # error
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('You must define one supplier for the'
-                                       ' product: %s') % product.name)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('You must define one supplier for '
+                                           'the product: %s') %
+                                         procurement.product.name)
             else:
                 # TRATO TODOS LOS PROVEEDORES ENCONTRADOS PARA EL PRODUCTO,
                 # CREARE UN PEDIDO DE COMPRA PARA CADA PROVEEDOR DE ESE
@@ -443,19 +441,18 @@ class ProcurementOrder(orm.Model):
                         sequence_ids = sequence_obj.search(
                             cr, uid, condition, context=context, limit=1)
                         if not sequence_ids:
-                            raise orm.except_orm(_('Purchase Order Creation '
-                                                   'Error'),
-                                                 _('Purchase Order sequence '
-                                                   'not found'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Purchase Order sequence not found'))
                         sequence = sequence_obj.browse(
                             cr, uid, sequence_ids[0], context=context)
                         condition = [('sequence', '=', sequence.id)]
                         ptype_ids = purchase_type_obj.search(
                             cr, uid, condition, context=context, limit=1)
                         if not ptype_ids:
-                            raise orm.except_orm(_('Purchase Order Creation '
-                                                   'Error'),
-                                                 _('Purchase Type not found'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Purchase Type not found'))
                         purchase_type = purchase_type_obj.browse(
                             cr, uid, ptype_ids[0], context=context)
                         code = purchase_type.sequence.code
@@ -479,10 +476,9 @@ class ProcurementOrder(orm.Model):
                         purchase_line_ids = purchase_line_obj.search(
                             cr, uid, [('order_id', '=', pc)], context=context)
                         if not purchase_line_ids:
-                            raise orm.except_orm(_('Purchase Order Creation'
-                                                   ' Error'),
-                                                 _('Purchase Order Line not'
-                                                   ' found(1)'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Purchase Order Line not found(1)'))
                         else:
                             purchase_order_line_id = purchase_line_ids[0]
                         purchaseorder_id = pc
@@ -687,11 +683,10 @@ class ProcurementOrder(orm.Model):
                             purchase_type_ids = purchase_type_obj.search(
                                 cr, uid, condition, context=context)
                             if not purchase_type_ids:
-                                raise orm.except_orm(_('Purchase Order '
-                                                       'Creation Error'),
-                                                     _('Others literal not '
-                                                       'found in Table '
-                                                       'Purchase Type'))
+                                raise exceptions.Warning(
+                                    _('Purchase Order Creation Error'),
+                                    _('Others literal not found in Table '
+                                      'Purchase Type'))
                         purchase_type = purchase_type_obj.browse(
                             cr, uid, purchase_type_ids[0], context=context)
                         # COJO LA SECUENCIA
@@ -735,10 +730,9 @@ class ProcurementOrder(orm.Model):
                         purchase_line_ids = purchase_line_obj.search(
                             cr, uid, condition, context=context)
                         if not purchase_line_ids:
-                            raise orm.except_orm(_('Purchase Order Creation '
-                                                   'Error'),
-                                                 _('Purchase Order Line not '
-                                                   'found(2)'))
+                            raise exceptions.Warning(
+                                _('Purchase Order Creation Error'),
+                                _('Purchase Order Line not found(2)'))
                         else:
                             purchase_order_line_id = purchase_line_ids[0]
                         purchaseorder_id = pc
@@ -832,10 +826,10 @@ class ProcurementOrder(orm.Model):
                         # Si no hay proveedores definidos para el producto,
                         # muestro el error
                         name = simulation_cost_line.product_id.name
-                        raise orm.except_orm(_('Purchase Order Creation '
-                                               'Error'),
-                                             _('You must define one supplier '
-                                               'for the product: %s') % name)
+                        raise exceptions.Warning(
+                            _('Purchase Order Creation Error'),
+                            _('You must define one supplier for the product: '
+                              '%s') % name)
                     else:
                         # TRATO TODOS LOS PROVEEDORES ENCONTRADOS PARA EL
                         # PRODUCTO, CREARE UN PEDIDO DE COMPRA PARA CADA
@@ -955,12 +949,10 @@ class ProcurementOrder(orm.Model):
                                     purchase_ids = purchase_type_obj.search(
                                         cr, uid, condition, context=context)
                                     if not purchase_ids:
-                                        raise orm.except_orm(_('Purchase Order'
-                                                               ' Error'),
-                                                             _('Others literal'
-                                                               ' not found in '
-                                                               'Table Purchase'
-                                                               ' Type'))
+                                        raise exceptions.Warning(
+                                            _('Purchase Order Error'),
+                                            _('Others literal not found in '
+                                              'Table Purchase Type'))
                                 purchase_type = purchase_type_obj.browse(
                                     cr, uid, purchase_ids[0], context=context)
                                 # COJO LA SECUENCIA
@@ -1012,11 +1004,9 @@ class ProcurementOrder(orm.Model):
                                     cr, uid, [('order_id', '=', pc)],
                                     context=context)
                                 if not purchase_line_ids:
-                                    raise orm.except_orm(_('Purchase Order '
-                                                           'Creation Error'),
-                                                         _('Purchase Order '
-                                                           'Line not '
-                                                           'found(2)'))
+                                    raise exceptions.Warning(
+                                        _('Purchase Order Creation Error'),
+                                        _('Purchase Order Line not found(2)'))
                                 purchase_order_line_id = purchase_line_ids[0]
                                 purchaseorder_id = pc
                             else:
@@ -1121,9 +1111,9 @@ class ProcurementOrder(orm.Model):
             purchase_type_ids = purchase_type_obj.search(
                 cr, uid, [('name', '=', 'Others')], context=context)
             if not purchase_type_ids:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('"Others" literal not found in Table '
-                                       'Purchase Type'))
+                raise exceptions.Warning(
+                    _('Purchase Order Creation Error'),
+                    _('"Others" literal not found in Table Purchase Type'))
             else:
                 purchase_type = purchase_type_obj.browse(
                     cr, uid, purchase_type_ids[0], context=context)
@@ -1199,9 +1189,9 @@ class ProcurementOrder(orm.Model):
         # Si no encuentro el subproyecto, lo creo
         if w_found == 0:
             if w_type == 3:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Subaccount analytic account not found,'
-                                       ' literal: %s') % w_literal)
+                raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                         _('Subaccount analytic account not '
+                                           'found, literal: %s') % w_literal)
             else:
                 line = {'name': w_literal,
                         'parent_id':  w_account_analytic_account_id,
@@ -1309,9 +1299,9 @@ class ProcurementOrder(orm.Model):
 
         # Si no encuentro el subproyecto, lo creo
         if w_found == 0:
-            raise orm.except_orm(_('Purchase Order Creation Error'),
-                                 _('Subaccount Analytic Account not found(1), '
-                                   'literal: %s') % w_literal)
+            raise exceptions.Warning(_('Purchase Order Creation Error'),
+                                     _('Subaccount Analytic Account not '
+                                       'found(1), literal: %s') % w_literal)
         if w_type == 1:
             # SI LA LINEA DEL PEDIDO DE VENTA NO VIENE DE UNA LINEA DE
             # SIMULACION DE COSTES, NO TENGO MANERA DE ASIGNARLA A NINGUNA
@@ -1342,9 +1332,10 @@ class ProcurementOrder(orm.Model):
             sub_account_analytic_account_id2 = account_ids3[0]
         else:
             if w_type == 3:
-                raise orm.except_orm(_('Purchase Order Creation Error'),
-                                     _('Subaccount Analytic for tab not '
-                                       'found(1), literal: %s') % w_literal2)
+                raise exceptions.Warning(
+                    _('Purchase Order Creation Error'),
+                    _('Subaccount Analytic for tab not found(1), literal: '
+                      '%s') % w_literal2)
             else:
                 line = {'name': w_literal2,
                         'parent_id':  sub_account_analytic_account_id,
@@ -1428,8 +1419,8 @@ class ProcurementOrder(orm.Model):
                 if w_maxid == 0:
                     # Si no he encontrado una simulación de coste
                     # historificada para ese pedido de venta
-                    raise orm.except_orm(_('Project Creation Error'),
-                                         _('Simulation Cost not found'))
+                    raise exceptions.Warning(_('Project Creation Error'),
+                                             _('Simulation Cost not found'))
                 else:
                     # Si no he encontrado una simulación de coste activa
                     # para ese pedido de venta, me quedo con el id de la
@@ -1456,8 +1447,8 @@ class ProcurementOrder(orm.Model):
         # TIENE ASOCIADO UN PROYECTO
         if sale_order.simulation_cost_ids:
             if not sale_order.project2_id:
-                raise orm.except_orm(_('Project Creation Error'),
-                                     _('Project not found'))
+                raise exceptions.Warning(_('Project Creation Error'),
+                                         _('Project not found'))
             else:
                 # SI EL PEDIDO DE VENTA TIENE UN PROYECTO ASOCIADO, COJO
                 # SU ID
@@ -1686,9 +1677,9 @@ class ProcurementOrder(orm.Model):
         # Si no encuentro el subproyecto, lo creo
         if w_found == 0:
             if w_type == 3:
-                raise orm.except_orm(_('Project Creation Error'),
-                                     _('Subaccount analytic account not found,'
-                                       ' literal: %s') % w_literal)
+                raise exceptions.Warning(_('Project Creation Error'),
+                                         _('Subaccount analytic account not '
+                                           'found, literal: %s') % w_literal)
             else:
                 line = {'name': w_literal,
                         'parent_id':  w_account_analytic_account_id,
@@ -1743,16 +1734,17 @@ class ProcurementOrder(orm.Model):
             project_id = project_obj.search(cr, uid, condition,
                                             context=context)
             if not project_id:
-                raise orm.except_orm(_('Project Creation Error'),
-                                     _('subproject not found(2), literal: '
-                                       '%s') % w_literal2)
+                raise exceptions.Warning(_('Project Creation Error'),
+                                         _('subproject not found(2), literal: '
+                                           '%s') % w_literal2)
             else:
                 subproject_id = project_id[0]
         else:
             if w_type == 3:
-                raise orm.except_orm(_('Project Creation Error'),
-                                     _('Subaccount Analytic for tab not '
-                                       'found(1), literal: %s') % w_literal2)
+                raise exceptions.Warning(_('Project Creation Error'),
+                                         _('Subaccount Analytic for tab not '
+                                           'found(1), literal: %s') %
+                                         w_literal2)
             else:
                 # Doy de alta el subproyecto
                 line = {'name': w_literal,

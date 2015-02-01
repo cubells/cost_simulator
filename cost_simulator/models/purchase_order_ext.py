@@ -28,19 +28,5 @@ class PurchaseOrder(models.Model):
     type_cost = fields.Char('Type Cost', size=64)
     type = fields.Many2one('purchase.type', 'Type')
 
-    def onchange_purchase_type(self, cr, uid, ids, type, context=None):
-        purchase_type_obj = self.pool['purchase.type']
-        sequence_obj = self.pool['ir.sequence']
-        res = {}
-        if type:
-            purchase_type = purchase_type_obj.browse(cr, uid, type,
-                                                     context=context)
-            code = purchase_type.sequence.code
-            seq = sequence_obj.get(cr, uid, code)
-            res.update({'name': seq})
-        return {'value': res}
-
-    def wkf_confirm_order(self, cr, uid, ids, context=None):
-        res = super(PurchaseOrder, self).wkf_confirm_order(cr, uid, ids,
-                                                           context)
-        return res
+    def wkf_confirm_order(self):
+        return super(PurchaseOrder, self).wkf_confirm_order()

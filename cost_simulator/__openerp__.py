@@ -35,6 +35,7 @@
     ],
     'data': [
         'data/workflow.xml',
+        'data/cost_serial_sequence.xml',
         'security/cost_simulator.xml',
         'security/ir.model.access.csv',
         'wizard/simulation_select_template_view.xml',

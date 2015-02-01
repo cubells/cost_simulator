@@ -15,147 +15,111 @@
 #    along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 ##############################################################################
-from openerp.osv import orm, fields
+
+from openerp import models, fields, exceptions, api, _
 from openerp.addons import decimal_precision as dp
-from openerp.tools.translate import _
 import time
 
 
-class SimulationCost(orm.Model):
-
+class SimulationCost(models.Model):
     _name = 'simulation.cost'
     _description = 'Simulation Costs'
 
-    _columns = {
-        'simulation_number': fields.char('Serial', size=64),
-        'name': fields.char('Description/Name', size=250, required=True,
-                            attrs={'readonly': [('historical_ok', '=',
-                                                 True)]}),
-        'partner_id': fields.many2one('res.partner', 'Customer'),
-        'historical_date': fields.datetime('Historical Date', readonly=True),
-        'historical_ok': fields.boolean('Historical OK'),
-        'overhead_costs':
-            fields.float('Overhead Costs',
-                         digits_compute=dp.get_precision('Purchase Price')),
-        'purchase_insale': fields.boolean('Copy Purchase information in Sale '
-                                          'information'),
-        'others_cost_lines_ids':
-            fields.one2many('simulation.cost.line', 'simulation_cost_id',
-                            'Others Lines',
-                            domain=[('type_cost', '=', 'Others')],
-                            attrs={'readonly': [('historical_ok', '=',
-                                                 True)]}),
-        # Total compras, ventas, beneficio para tipo coste others
-        'subtotal5_purchase':
-            fields.float('Total Purchase', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        'subtotal5_sale':
-            fields.float('Total Sale', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        'benefit5':
-            fields.float('Total Benefit', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Campos para los totales de la última pestaña
-        'subtotal5t_purchase':
-            fields.float('Total Purchase', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        'subtotal5t_sale':
-            fields.float('Total Sale', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        'benefit5t':
-            fields.float('Total Benefit', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total Costes
-        'total_costs':
-            fields.float('TOTAL COSTS', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total Ventas
-        'total_sales':
-            fields.float('TOTAL SALES', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total Beneficios
-        'total_benefits':
-            fields.float('TOTAL BENEFITS', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total amortizaciones
-        'total_amortizations':
-            fields.float('Total Amortizations', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total indirectos
-        'total_indirects':
-            fields.float('Total Indirects', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total amortizaciones + indirectos
-        'total_amort_indirects':
-            fields.float('TOTAL', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Gastos Generales
-        'total_overhead_costs':
-            fields.float('Overhead_costs', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Total
-        'total':
-            fields.float('TOTAL', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Precio Neto
-        'net_cost':
-            fields.float('Net Cost', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Porcentaje Precio Neto
-        'net_cost_percentage': fields.float('Net Cost %', digits=(3, 2),
-                                            readonly=True),
-        # Margen Bruto
-        'gross_margin':
-            fields.float('Gross Margin', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Porcentaje Margen Bruto
-        'gross_margin_percentage':
-            fields.float('Gross Margin %', digits=(3, 2), readonly=True),
-        # Margen de Contribución
-        'contribution_margin':
-            fields.float('Contribution Margin', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Porcentaje Margen Contribucion
-        'contribution_margin_percentage':
-            fields.float('Contribution Margin %', digits=(3, 2),
-                         readonly=True),
-        # Margen Neto
-        'net_margin':
-            fields.float('Net Margin', readonly=True,
-                         digits_compute=dp.get_precision('Purchase Price')),
-        # Porcentaje Margen Neto
-        'net_margin_percentage': fields.float('Net Margin %', digits=(3, 2),
-                                              readonly=True),
-        # Pedidos de Venta
-        'sale_order_ids':
-            fields.many2many('sale.order', 'simucost_saleorder_rel',
-                             'simulation_cost_id', 'sale_order_id',
-                             'Sale Orders', readonly=True),
-        # Proyectos
-        'project_ids': fields.one2many('project.project', 'simulation_cost_id',
-                                       'Projects'),
-        # Subproyectos
-        'subproject_ids':
-            fields.one2many('project.project', 'simulation_cost_id2',
-                            'Subprojects'),
-        # Generar Pedido de venta por productos de lineas de simulacion
-        'generate_by_line': fields.boolean('Generate by line'),
-        # WORKFLOW DE LA SIMULACION DEL COSTE
-        'state': fields.selection([('draft', 'Draft'),
-                                   ('accepted', 'Accepted'),
-                                   ('canceled', 'Canceled'),
-                                   ], 'State', readonly=True)
-    }
-
-    _defaults = {'state': lambda *a: 'draft',
-                 'historical_ok': lambda *a: False,
-                 'purchase_insale': lambda *a: True
-                 }
+    simulation_number = fields.Char('Serial', size=64)
+    name = fields.Char('Description/Name', size=250, required=True,
+                       readonly=[('historical_ok', '=', True)])
+    partner_id = fields.Many2one('res.partner', 'Customer')
+    historical_date = fields.Datetime('Historical Date', readonly=True)
+    historical_ok = fields.Boolean('Historical OK')
+    overhead_costs = fields.Float('Overhead Costs',
+                                  digits_compute=dp.get_precision(
+                                      'Purchase Price'))
+    purchase_insale = fields.Boolean('Copy Purchase information in Sale '
+                                     'information', default=True)
+    others_cost_lines_ids = fields.One2many('simulation.cost.line',
+                                            'simulation_cost_id',
+                                            'Others Lines',
+                                            domain=[
+                                                ('type_cost', '=', 'Others')],
+                                            readonly=[
+                                                ('historical_ok', '=', True)],
+                                            default=False)
+    subtotal5_purchase = fields.Float('Total Purchase', readonly=True,
+                                      digits_compute=
+                                      dp.get_precision('Purchase Price'))
+    subtotal5_sale = fields.Float('Total Sale', readonly=True,
+                                  digits_compute=
+                                  dp.get_precision('Purchase Price'))
+    benefit5 = fields.Float('Total Benefit', readonly=True,
+                            digits_compute=dp.get_precision('Purchase Price'))
+    subtotal5t_purchase = fields.Float('Total Purchase', readonly=True,
+                                       digits_compute=
+                                       dp.get_precision('Purchase Price'))
+    subtotal5t_sale = fields.Float('Total Sale', readonly=True,
+                                   digits_compute=
+                                   dp.get_precision('Purchase Price'))
+    benefit5t = fields.Float('Total Benefit', readonly=True,
+                             digits_compute=dp.get_precision('Purchase Price'))
+    total_costs = fields.Float('TOTAL COSTS', readonly=True,
+                               digits_compute=
+                               dp.get_precision('Purchase Price'))
+    total_sales = fields.Float('TOTAL SALES', readonly=True,
+                               digits_compute=
+                               dp.get_precision('Purchase Price'))
+    total_benefits = fields.Float('TOTAL BENEFITS', readonly=True,
+                                  digits_compute=
+                                  dp.get_precision('Purchase Price'))
+    total_amortizations = fields.Float('Total Amortizations', readonly=True,
+                                       digits_compute=
+                                       dp.get_precision('Purchase Price'))
+    total_indirects = fields.Float('Total Indirects', readonly=True,
+                                   digits_compute=
+                                   dp.get_precision('Purchase Price'))
+    total_amort_indirects = fields.Float('TOTAL', readonly=True,
+                                         digits_compute=
+                                         dp.get_precision('Purchase Price'))
+    total_overhead_costs = fields.Float('Overhead_costs', readonly=True,
+                                        digits_compute=
+                                        dp.get_precision('Purchase Price'))
+    total = fields.Float('TOTAL', readonly=True,
+                         digits_compute=dp.get_precision('Purchase Price'))
+    net_cost = fields.Float('Net Cost', readonly=True,
+                            digits_compute=dp.get_precision('Purchase Price'))
+    net_cost_percentage = fields.Float('Net Cost %', digits=(3, 2),
+                                      readonly=True)
+    gross_margin = fields.Float('Gross Margin', readonly=True,
+                                digits_compute=
+                                dp.get_precision('Purchase Price'))
+    gross_margin_percentage = fields.Float('Gross Margin %', digits=(3, 2),
+                                           readonly=True)
+    contribution_margin = fields.Float('Contribution Margin', readonly=True,
+                                       digits_compute=
+                                       dp.get_precision('Purchase Price'))
+    contribution_margin_percentage = fields.Float('Contribution Margin %',
+                                                  digits=(3, 2), readonly=True)
+    net_margin = fields.Float('Net Margin', readonly=True,
+                              digits_compute=
+                              dp.get_precision('Purchase Price'))
+    net_margin_percentage = fields.Float('Net Margin %', digits=(3, 2),
+                                         readonly=True)
+    sale_order_ids = fields.Many2many('sale.order', 'simucost_saleorder_rel',
+                                      'simulation_cost_id', 'sale_order_id',
+                                      'Sale Orders', readonly=True)
+    project_ids = fields.One2many('project.project', 'simulation_cost_id',
+                                  'Projects')
+    subproject_ids = fields.One2many('project.project', 'simulation_cost_id2',
+                                     'Subprojects')
+    generate_by_line = fields.Boolean('Generate by line')
+    state = fields.Selection(
+        [
+            ('draft', 'Draft'),
+            ('accepted', 'Accepted'),
+            ('canceled', 'Canceled')
+        ], 'State', readonly=True, default='draft')
 
     def create(self, cr, uid, data, context=None):
         sequence_obj = self.pool['ir.sequence']
-        seria = sequence_obj.get(cr, uid, 'cost.serial'),
-        serial = seria[0]
+        serial = sequence_obj.get(cr, uid, 'cost_serial')[0]
         data.update({'simulation_number': serial})
         return super(SimulationCost, self).create(cr, uid, data, context)
 
@@ -163,11 +127,11 @@ class SimulationCost(orm.Model):
         unlink_ids = []
         for simulation_cost in self.browse(cr, uid, ids, context=context):
             if simulation_cost.sale_order_ids:
-                raise orm.except_orm(_('Invalid action !'),
-                                     _('This Simulation Costs Have Associated '
-                                       'Sales Orders'))
+                raise exceptions.Warning(_('Invalid action !'),
+                                         _('This Simulation Costs Have '
+                                           'Associated Sales Orders'))
             unlink_ids.append(simulation_cost.id)
-        orm.Model.unlink(self, cr, uid, unlink_ids, context=context)
+        models.Model.unlink(self, cr, uid, unlink_ids, context=context)
         return True
 
     # BOTÓN RECALCULAR TOTALES, este boton está en todas las pestañas
@@ -176,8 +140,8 @@ class SimulationCost(orm.Model):
         simulation_cost = self.browse(cr, uid, ids[0])
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise orm.except_orm(_('Error'), _('This cost simulation have '
-                                               'Historical'))
+            raise exceptions.Warning(_('Error'), _('This cost simulation have '
+                                                   'Historical'))
         subtotal_others_costs = 0.0
         subtotal_others_sales = 0.0
         subtotal_others_benefit = 0.0
@@ -325,15 +289,15 @@ class SimulationCost(orm.Model):
         simulation_cost = self.browse(cr, uid, ids[0], context=context)
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise orm.except_orm(_('Error'),
-                                 _('You can not generate one Sale Order from '
-                                   'one Historical'))
+            raise exceptions.Warning(_('Error'),
+                                     _('You can not generate one Sale Order '
+                                       'from one Historical'))
         # Para crear un pedido de venta, la simulación debe de tener
         # asignada un cliente
         if not simulation_cost.partner_id:
-            raise orm.except_orm(_('Customer Error'),
-                                 _('You must assign a customer to the '
-                                   'simulation'))
+            raise exceptions.Warning(_('Customer Error'),
+                                     _('You must assign a customer to the '
+                                       'simulation'))
         # Switch para saber si tengo que grabar SALE.ORDER
         grabar_sale_order = False
         general_datas = {}
@@ -346,13 +310,15 @@ class SimulationCost(orm.Model):
             # NO está asociada a ninguna línea de pedido
             if not cost_line.sale_order_line_id:
                 if not cost_line.product_id:
-                    raise orm.except_orm(_('Create Sale Order Error'),
-                                         _('On a line of others lines, needed '
-                                           'to define a purchase product'))
+                    raise exceptions.Warning(_('Create Sale Order Error'),
+                                             _('On a line of others lines, '
+                                               'needed to define a purchase '
+                                               'product'))
                 if not cost_line.product_sale_id:
-                    raise orm.except_orm(_('Create Sale Order Error'),
-                                         _('On a line of others lines, needed '
-                                           'to define a sale product'))
+                    raise exceptions.Warning(_('Create Sale Order Error'),
+                                             _('On a line of others lines, '
+                                               'needed to define a sale '
+                                               'product'))
                 grabar_sale_order = True
                 w_generation_type = 0
                 if simulation_cost.generate_by_line:
@@ -440,7 +406,8 @@ class SimulationCost(orm.Model):
                         general_datas[(my_product_id)] = my_vals
         # Si noy hay lineas para grabar, muestro el error
         if not grabar_sale_order:
-            raise orm.except_orm(_('Error'), _('No Cost Lines found to Treat'))
+            raise exceptions.Warning(_('Error'),
+                                     _('No Cost Lines found to Treat'))
         # G R A B O   SALER.ORDER
         # CREO EL OBJETO SALE.ORDER
         # Cojo los datos del cliente
@@ -537,8 +504,8 @@ class SimulationCost(orm.Model):
         simulation_cost = self.browse(cr, uid, ids[0], *args)
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise orm.except_orm(_('Historical Error'),
-                                 _('Already Historical'))
+            raise exceptions.Warning(_('Historical Error'),
+                                     _('Already Historical'))
         else:
             # Le pongo la fecha del sistema
             fec_histo = time.strftime('%Y-%m-%d')
@@ -564,8 +531,8 @@ class SimulationCost(orm.Model):
         simulation_cost_ids = simulation_cost_obj2.search(cr, uid, my_search,
                                                           *args)
         if simulation_cost_ids:
-            raise orm.except_orm(_('Error Creating Simulation Cost'),
-                                 _('There is a Simulation Cost'))
+            raise exceptions.Warning(_('Error Creating Simulation Cost'),
+                                     _('There is a Simulation Cost'))
         # Copio el objeto simulacion de coste.
         my_vals = {'historical_date': None,
                    'historical_ok': False,
@@ -678,140 +645,88 @@ class SimulationCost(orm.Model):
         simulation_cost = self.browse(cr, uid, ids[0])
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise orm.except_orm(_('Error'),
-                                 _('This cost simulation have Historical'))
+            raise exceptions.Warning(_('Error'),
+                                     _('This cost simulation have Historical'))
         return True
 
 
-class SimulationCostLine(orm.Model):
-
+class SimulationCostLine(models.Model):
     _name = 'simulation.cost.line'
     _description = 'Simulation Cost Line'
 
-    def _subtotal_purchase_ref(self, cr, uid, ids, name, args, context=None):
-        res = {}
-        for cost_line in self.browse(cr, uid, ids, context=context):
-            if cost_line.purchase_price and cost_line.amount:
-                res[cost_line.id] = (cost_line.purchase_price *
-                                     cost_line.amount)
-            else:
-                res[cost_line.id] = 0
-        return res
+    @api.one
+    @api.depends('purchase_price', 'amount')
+    def _subtotal_purchase_ref(self):
+        self.subtotal_purchase = self.purchase_price * self.amount
 
-    def _subtotal_sale_ref(self, cr, uid, ids, name, args, context=None):
-        res = {}
-        for cost_line in self.browse(cr, uid, ids, context=context):
-            if cost_line.sale_price and cost_line.amount:
-                res[cost_line.id] = cost_line.sale_price * cost_line.amount
-            else:
-                res[cost_line.id] = 0
-        return res
+    @api.one
+    @api.depends('sale_price', 'amount')
+    def _subtotal_sale_ref(self):
+        self.subtotal_sale = self.sale_price * self.amount
 
-    def _benefit_ref(self, cr, uid, ids, name, args, context=None):
-        res = {}
-        for cost_line in self.browse(cr, uid, ids, context=context):
-            if cost_line.subtotal_purchase and cost_line.subtotal_sale:
-                res[cost_line.id] = (cost_line.subtotal_sale -
-                                     cost_line.subtotal_purchase -
-                                     cost_line.amortization_cost -
-                                     cost_line.indirect_cost)
-            else:
-                res[cost_line.id] = 0
-        return res
+    @api.one
+    @api.depends('subtotal_sale', 'subtotal_purchase', 'amortization_cost',
+                 'indirect_cost')
+    def _benefit_ref(self):
+        self.benefit = self.subtotal_sale - self.subtotal_purchase - \
+                       self.amortization_cost - self.indirect_cost
 
-    _columns = {
-        'simulation_cost_id': fields.many2one('simulation.cost', 'Cost',
-                                              ondelete='cascade'),
-        'product_id': fields.many2one('product.product', 'Product',
-                                      required=True),
-        'name': fields.char('Name', size=64, required=True),
-        'description': fields.text('Description'),
-        # Proveedor
-        'supplier_id': fields.many2one('res.partner', 'Supplier'),
-        # Precio de compra
-        'purchase_price': fields.float('Cost Price', digits=(7, 2)),
-        # Unidad de medida
-        'uom_id': fields.many2one('product.uom', 'Default Unit Of Measure',
-                                  required=True),
-        # Cantidad
-        'amount': fields.float('Amount',
-                               digits_compute=dp.get_precision('Product UoM')),
-        # Subtotal de compra
-        'subtotal_purchase':
-            fields.function(_subtotal_purchase_ref, method=True, digits=(7, 2),
-                            string='Subtotal Purchase', store=False),
-        # Producto de venta
-        'product_sale_id': fields.many2one('product.product', 'Product'),
-        # Precio de venta
-        'sale_price': fields.float('Sale Price', digits=(7, 2)),
-        # Margen estimado
-        'estimated_margin': fields.float('Estimated Margin', digits=(3, 4)),
-        # Subtotal de venta
-        'subtotal_sale':
-            fields.function(_subtotal_sale_ref, method=True, digits=(7, 2),
-                            string='Subtotal Sale', store=False),
-        # Beneficio
-        'benefit':
-            fields.function(_benefit_ref, method=True, digits=(7, 2),
-                            string='Benefit', store=False),
-        # Fecha Estimada de compra o realización
-        'estimated_date_purchase_completion':
-            fields.date('Estimated Date Purchase Completion'),
-        # Tasa de amortizacion
-        'amortization_rate': fields.float('Amortization Rate', digits=(3, 2)),
-        # Coste de Amortización
-        'amortization_cost': fields.float('Amortization Cost', digits=(7, 2)),
-        # Tasa Costes Indirectos
-        'indirect_cost_rate': fields.float('Indirect Cost Rate',
-                                           digits=(3, 2)),
-        # Coste de Amortización
-        'indirect_cost': fields.float('Indirect Cost', digits=(7, 2)),
-        'type_cost': fields.selection([('Purchase', 'Purchase'),
-                                       ('Investment', 'Investment'),
-                                       ('Subcontracting Services',
-                                        'Subcontracting'),
-                                       ('Task', 'Internal Task'),
-                                       ('Others', 'Others')],
-                                      'Type of Cost'),
-        'type2': fields.selection([('fixed', 'Fixed'),
-                                   ('variable', 'Variable')],
-                                  'Fixed/Variable'),
-        'type3': fields.selection([('marketing', 'Marketing'),
-                                   ('sale', 'Sale'),
-                                   ('production', 'Production'),
-                                   ('generalexpenses', 'General Expenses'),
-                                   ('structureexpenses', 'Structure Expenses'),
-                                   ('amortizationexpenses',
-                                    'Amortization Expenses')],
-                                  'Cost Category'),
-        # Plantilla a la que pertenece la linea
-        'template_id': fields.many2one('simulation.template', 'Template'),
-        # Línea de Pedido de Venta a la que esta asociada esta línea de coste
-        'sale_order_line_id': fields.many2one('sale.order.line',
-                                              'Sale Orders Lines'),
-        # Copiar informacion de producto de compra en producto de venta
-        'purchase_insale':
-            fields.related('simulation_cost_id', 'purchase_insale',
-                           type='boolean', relation='simulation.cost',
-                           string='Copy Purchase information in Sale '
-                           'information'),
-    }
-    _defaults = {
-        # c.get('type_cost',False): CON ESTO LO QUE CONSEGUIMOS ES QUE ANTES
-        # DE GRABAR EL REGISTRO, RECUPERAMOS EL VALOR DEL CAMPO 'type_cost',
-        # QUE LE HEMOS CARGADO EN EL FORM CON EL ATRIBUTO 'context', ESTO LO
-        #  HEMOS DEFINIDO EN EL TREE Y EN EL FORM DEL PADRE (template que
-        # luego llama a template_line). EN EL FORM DE TEMPLATE_LINE, ESTE
-        # CAMPO SE DEFINE COMO INVISIBLE.
-        'type_cost': lambda self, cr, uid, c: c.get('type_cost', False),
-        'type2': lambda self, cr, uid, c: c.get('type2', False),
-        'type3': lambda self, cr, uid, c: c.get('type3', False),
-        'amount': 1.0,
-        'estimated_date_purchase_completion': fields.date.context_today,
-        'purchase_insale': lambda self, cr, uid, c: c.get('purchase_insale',
-                                                          False),
-    }
+    simulation_cost_id = fields.Many2one('simulation.cost', 'Cost')
+    product_id = fields.Many2one('product.product', 'Product', required=True)
+    name = fields.Char('Name', size=64, required=True)
+    description = fields.Text('Description')
+    supplier_id = fields.Many2one('res.partner', 'Supplier')
+    purchase_price = fields.Float('Cost Price', digits=(7, 2))
+    uom_id = fields.Many2one('product.uom', 'Default Unit Of Measure',
+                             required=True)
+    amount = fields.Float('Amount',
+                          digits_compute=dp.get_precision('Product UoM'),
+                          default=1.0)
+    subtotal_purchase = fields.Float(compute='_subtotal_purchase_ref',
+                                     method=True, digits=(7, 2),
+                                     string='Subtotal Purchase', store=False)
+    product_sale_id = fields.Many2one('product.product', 'Product')
+    sale_price = fields.Float('Sale Price', digits=(7, 2))
+    estimated_margin = fields.Float('Estimated Margin', digits=(3, 4))
+    subtotal_sale = fields.Float(compute='_subtotal_sale_ref',
+                                 method=True, digits=(7, 2),
+                                 string='Subtotal Sale', store=False)
+    benefit = fields.Float(compute='_benefit_ref', method=True, digits=(7, 2),
+                           string='Benefit', store=False)
+    estimated_date_purchase_completion = fields.Date(
+        'Estimated Date Purchase Completion',
+        default=lambda self: fields.Date.context_today(self))
+    amortization_rate = fields.Float('Amortization Rate', digits=(3, 2))
+    amortization_cost = fields.Float('Amortization Cost', digits=(7, 2))
+    indirect_cost_rate = fields.Float('Indirect Cost Rate', digits=(3, 2))
+    indirect_cost = fields.Float('Indirect Cost', digits=(7, 2))
+    type_cost = fields.Selection([('Purchase', 'Purchase'),
+                                  ('Investment', 'Investment'),
+                                  ('Subcontracting Services',
+                                   'Subcontracting'),
+                                  ('Task', 'Internal Task'),
+                                  ('Others', 'Others')],
+                                 'Type of Cost')
+    type2 = fields.Selection([('fixed', 'Fixed'),
+                              ('variable', 'Variable')],
+                             'Fixed/Variable')
+    type3 = fields.Selection([('marketing', 'Marketing'),
+                              ('sale', 'Sale'),
+                              ('production', 'Production'),
+                              ('generalexpenses', 'General Expenses'),
+                              ('structureexpenses', 'Structure Expenses'),
+                              ('amortizationexpenses',
+                               'Amortization Expenses')],
+                             'Cost Category')
+    template_id = fields.Many2one('simulation.template', 'Template')
+    sale_order_line_id = fields.Many2one('sale.order.line',
+                                         'Sale Orders Lines')
+    purchase_insale = fields.Boolean(string='Copy Purchase information in '
+                                            'Sale information',
+                                     related=
+                                     'simulation_cost_id.purchase_insale')
 
+    @api.v7
     def onchange_product(self, cr, uid, ids, product_id, type, amount,
                          subtotal_purchase, estimated_date_purchase_completion,
                          sale_order_line_id, sale_subtotal, context=None):
@@ -820,9 +735,9 @@ class SimulationCostLine(orm.Model):
         supplierinfo_obj = self.pool['product.supplierinfo']
         partner_obj = self.pool['res.partner']
         if sale_order_line_id:
-            raise orm.except_orm(_('Product Error'),
-                                 _('Yo can not modify the product, this line '
-                                   'belongs to a line of sale order'))
+            raise exceptions.Warning(_('Product Error'),
+                                     _('Yo can not modify the product, this '
+                                       'line belongs to a line of sale order'))
         res = {}
         if not product_id or not type:
             return {'value': res}
@@ -937,15 +852,15 @@ class SimulationCostLine(orm.Model):
         product_obj = self.pool['product.product']
         pricelist_obj = self.pool['product.pricelist']
         if sale_order_line_id:
-            raise orm.except_orm(_('Supplier Error'),
-                                 _('Yo can not modify the supplier, this line '
-                                   'belongs to a line of sale order'))
+            raise exceptions.Warning(_('Supplier Error'),
+                                     _('You can not modify the supplier, this '
+                                       'line belongs to a line of sale order'))
         res = {}
         if not supplier_id:
             return {'value': res}
         if not product_id:
-            raise orm.except_orm(_('Supplier Error'),
-                                 _('You must select a product'))
+            raise exceptions.Warning(_('Supplier Error'),
+                                     _('You must select a product'))
         # Accedo a datos del proveedor
         supplier = partner_obj.browse(cr, uid, supplier_id, context=context)
         lang = partner_obj.browse(cr, uid, supplier_id).lang
@@ -1020,9 +935,10 @@ class SimulationCostLine(orm.Model):
                                        benefit, sale_order_line_id,
                                        purchase_insale, context=None):
         if sale_order_line_id:
-            raise orm.except_orm(_('Price/Amount Error'),
-                                 _('Yo can not modify the price/ammount, this '
-                                   'line belongs to a line of sale order'))
+            raise exceptions.Warning(_('Price/Amount Error'),
+                                     _('Yo can not modify the price/ammount, '
+                                       'this line belongs to a line of sale '
+                                       'order'))
         res = {}
         if not purchase_price or not amount:
             return {'value': res}
@@ -1100,9 +1016,10 @@ class SimulationCostLine(orm.Model):
                               indirect_cost, context=None):
         product_obj = self.pool['product.product']
         if sale_order_line_id:
-            raise orm.except_orm(_('Sale Product Error'),
-                                 _('Yo can not modify the sale product, this '
-                                   'line belongs to a line of sale order'))
+            raise exceptions.Warning(_('Sale Product Error'),
+                                     _('You can not modify the sale product, '
+                                       'this line belongs to a line of sale '
+                                       'order'))
         res = {}
         if not product_sale_id or not product_id:
             return {'value': res}
@@ -1110,9 +1027,9 @@ class SimulationCostLine(orm.Model):
         product = product_obj.browse(cr, uid, product_sale_id, context=context)
         if product_sale_id != product_id:
             if not product.sale_ok:
-                raise orm.except_orm(_('Sale Product Error'),
-                                     _('Product must be to sale OR the same '
-                                       'product of purchase'))
+                raise exceptions.Warning(_('Sale Product Error'),
+                                         _('Product must be to sale OR the '
+                                           'same product of purchase'))
         # Calculo el total de la venta
         if product.list_price > 0 and amount > 0:
             subtotal_sale = amount * product.list_price
@@ -1140,9 +1057,10 @@ class SimulationCostLine(orm.Model):
                             subtotal_purchase, benefit, sale_order_line_id,
                             amortization_cost, indirect_cost, context=None):
         if sale_order_line_id:
-            raise orm.except_orm(_('Sale Price Error'),
-                                 _('Yo can not modify the sale price, this '
-                                   'line belongs to a line of sale order'))
+            raise exceptions.Warning(_('Sale Price Error'),
+                                     _('You can not modify the sale price, '
+                                       'this line belongs to a line of sale '
+                                       'order'))
 
         res = {}
         if not sale_price:
@@ -1174,10 +1092,10 @@ class SimulationCostLine(orm.Model):
                                   sale_order_line_id, amortization_cost,
                                   indirect_cost, context=None):
         if sale_order_line_id:
-            raise orm.except_orm(_('Estimated Margin Error'),
-                                 _('Yo can not modify the estimated margin, '
-                                   'this line belongs to a line of sale '
-                                   'order'))
+            raise exceptions.Warning(_('Estimated Margin Error'),
+                                     _('You can not modify the estimated '
+                                       'margin, this line belongs to a line '
+                                       'of sale order'))
         res = {}
         if not estimated_margin:
             return {'value': res}
