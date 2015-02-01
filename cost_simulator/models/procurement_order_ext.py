@@ -1710,7 +1710,7 @@ class ProcurementOrder(models.Model):
             project_id = project_obj.search(cr, uid, condition,
                                             context=context)
             if not project_id:
-                raise exceptions.Warning(ç_('subproject not found(2), literal: '
+                raise exceptions.Warning(_('subproject not found(2), literal: '
                                            '%s') % w_literal2)
             else:
                 subproject_id = project_id[0]
