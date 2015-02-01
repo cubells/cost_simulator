@@ -669,7 +669,7 @@ class SimulationCostLine(models.Model):
                  'indirect_cost')
     def _benefit_ref(self):
         self.benefit = self.subtotal_sale - self.subtotal_purchase - \
-                       self.amortization_cost - self.indirect_cost
+            self.amortization_cost - self.indirect_cost
 
     simulation_cost_id = fields.Many2one('simulation.cost', 'Cost')
     product_id = fields.Many2one('product.product', 'Product', required=True)
@@ -721,10 +721,9 @@ class SimulationCostLine(models.Model):
     template_id = fields.Many2one('simulation.template', 'Template')
     sale_order_line_id = fields.Many2one('sale.order.line',
                                          'Sale Orders Lines')
-    purchase_insale = fields.Boolean(string='Copy Purchase information in '
-                                            'Sale information',
-                                     related=
-                                     'simulation_cost_id.purchase_insale')
+    purchase_insale = fields.Boolean(
+        string='Copy Purchase information in Sale information',
+        related='simulation_cost_id.purchase_insale')
 
     @api.v7
     def onchange_product(self, cr, uid, ids, product_id, type, amount,
