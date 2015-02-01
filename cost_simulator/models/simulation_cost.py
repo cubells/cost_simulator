@@ -45,41 +45,42 @@ class SimulationCost(models.Model):
                                                 ('historical_ok', '=', True)],
                                             default=False)
     subtotal5_purchase = fields.Float('Total Purchase', readonly=True,
-        digits_compute=dp.get_precision('Purchase Price'))
+                                      digits_compute=dp.get_precision(
+                                          'Purchase Price'))
     subtotal5_sale = fields.Float('Total Sale', readonly=True,
-                                  digits_compute=
-                                  dp.get_precision('Purchase Price'))
+                                  digits_compute=dp.get_precision(
+                                      'Purchase Price'))
     benefit5 = fields.Float('Total Benefit', readonly=True,
                             digits_compute=dp.get_precision('Purchase Price'))
     subtotal5t_purchase = fields.Float('Total Purchase', readonly=True,
-                                       digits_compute=
-                                       dp.get_precision('Purchase Price'))
+                                       digits_compute=dp.get_precision(
+                                           'Purchase Price'))
     subtotal5t_sale = fields.Float('Total Sale', readonly=True,
-                                   digits_compute=
-                                   dp.get_precision('Purchase Price'))
+                                   digits_compute=dp.get_precision(
+                                       'Purchase Price'))
     benefit5t = fields.Float('Total Benefit', readonly=True,
                              digits_compute=dp.get_precision('Purchase Price'))
     total_costs = fields.Float('TOTAL COSTS', readonly=True,
-                               digits_compute=
-                               dp.get_precision('Purchase Price'))
+                               digits_compute=dp.get_precision(
+                                   'Purchase Price'))
     total_sales = fields.Float('TOTAL SALES', readonly=True,
-                               digits_compute=
-                               dp.get_precision('Purchase Price'))
+                               digits_compute=dp.get_precision(
+                                   'Purchase Price'))
     total_benefits = fields.Float('TOTAL BENEFITS', readonly=True,
-                                  digits_compute=
-                                  dp.get_precision('Purchase Price'))
+                                  digits_compute=dp.get_precision(
+                                      'Purchase Price'))
     total_amortizations = fields.Float('Total Amortizations', readonly=True,
-                                       digits_compute=
-                                       dp.get_precision('Purchase Price'))
+                                       digits_compute=dp.get_precision(
+                                           'Purchase Price'))
     total_indirects = fields.Float('Total Indirects', readonly=True,
-                                   digits_compute=
-                                   dp.get_precision('Purchase Price'))
+                                   digits_compute=dp.get_precision(
+                                       'Purchase Price'))
     total_amort_indirects = fields.Float('TOTAL', readonly=True,
-                                         digits_compute=
-                                         dp.get_precision('Purchase Price'))
+                                         digits_compute=dp.get_precision(
+                                             'Purchase Price'))
     total_overhead_costs = fields.Float('Overhead_costs', readonly=True,
-                                        digits_compute=
-                                        dp.get_precision('Purchase Price'))
+                                        digits_compute=dp.get_precision(
+                                            'Purchase Price'))
     total = fields.Float('TOTAL', readonly=True,
                          digits_compute=dp.get_precision('Purchase Price'))
     net_cost = fields.Float('Net Cost', readonly=True,
@@ -87,18 +88,18 @@ class SimulationCost(models.Model):
     net_cost_percentage = fields.Float('Net Cost %', digits=(3, 2),
                                       readonly=True)
     gross_margin = fields.Float('Gross Margin', readonly=True,
-                                digits_compute=
-                                dp.get_precision('Purchase Price'))
+                                digits_compute=dp.get_precision(
+                                    'Purchase Price'))
     gross_margin_percentage = fields.Float('Gross Margin %', digits=(3, 2),
                                            readonly=True)
     contribution_margin = fields.Float('Contribution Margin', readonly=True,
-                                       digits_compute=
-                                       dp.get_precision('Purchase Price'))
+                                       digits_compute=dp.get_precision(
+                                           'Purchase Price'))
     contribution_margin_percentage = fields.Float('Contribution Margin %',
                                                   digits=(3, 2), readonly=True)
     net_margin = fields.Float('Net Margin', readonly=True,
-                              digits_compute=
-                              dp.get_precision('Purchase Price'))
+                              digits_compute=dp.get_precision(
+                                  'Purchase Price'))
     net_margin_percentage = fields.Float('Net Margin %', digits=(3, 2),
                                          readonly=True)
     sale_order_ids = fields.Many2many('sale.order', 'simucost_saleorder_rel',

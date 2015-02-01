@@ -16,7 +16,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, exceptions, _
+from openerp import models, exceptions, _
 
 
 class PurchaseRequisition(models.Model):
