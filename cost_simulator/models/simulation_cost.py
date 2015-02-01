@@ -27,7 +27,7 @@ class SimulationCost(models.Model):
 
     simulation_number = fields.Char('Serial', size=64)
     name = fields.Char('Description/Name', size=250, required=True,
-                       readonly=[('historical_ok', '=', True)])
+                       attrs={'readonly': [('historical_ok', '=', True)]})
     partner_id = fields.Many2one('res.partner', 'Customer')
     historical_date = fields.Datetime('Historical Date', readonly=True)
     historical_ok = fields.Boolean('Historical OK')
@@ -36,14 +36,10 @@ class SimulationCost(models.Model):
                                       'Purchase Price'))
     purchase_insale = fields.Boolean('Copy Purchase information in Sale '
                                      'information', default=True)
-    others_cost_lines_ids = fields.One2many('simulation.cost.line',
-                                            'simulation_cost_id',
-                                            'Others Lines',
-                                            domain=[
-                                                ('type_cost', '=', 'Others')],
-                                            readonly=[
-                                                ('historical_ok', '=', True)],
-                                            default=False)
+    others_cost_lines_ids = fields.One2many(
+        'simulation.cost.line', 'simulation_cost_id', 'Others Lines',
+        domain=[('type_cost', '=', 'Others')],
+        attrs={'readonly': [('historical_ok', '=', True)]}, default=False)
     subtotal5_purchase = fields.Float('Total Purchase', readonly=True,
                                       digits_compute=dp.get_precision(
                                           'Purchase Price'))
@@ -127,8 +123,7 @@ class SimulationCost(models.Model):
         unlink_ids = []
         for simulation_cost in self.browse(cr, uid, ids, context=context):
             if simulation_cost.sale_order_ids:
-                raise exceptions.Warning(_('Invalid action !'),
-                                         _('This Simulation Costs Have '
+                raise exceptions.Warning(_('This Simulation Costs Have '
                                            'Associated Sales Orders'))
             unlink_ids.append(simulation_cost.id)
         models.Model.unlink(self, cr, uid, unlink_ids, context=context)
@@ -140,8 +135,7 @@ class SimulationCost(models.Model):
         simulation_cost = self.browse(cr, uid, ids[0])
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise exceptions.Warning(_('Error'), _('This cost simulation have '
-                                                   'Historical'))
+            raise exceptions.Warning(_('This cost simulation have Historical'))
         subtotal_others_costs = 0.0
         subtotal_others_sales = 0.0
         subtotal_others_benefit = 0.0
@@ -289,14 +283,12 @@ class SimulationCost(models.Model):
         simulation_cost = self.browse(cr, uid, ids[0], context=context)
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise exceptions.Warning(_('Error'),
-                                     _('You can not generate one Sale Order '
+            raise exceptions.Warning(_('You can not generate one Sale Order '
                                        'from one Historical'))
         # Para crear un pedido de venta, la simulación debe de tener
         # asignada un cliente
         if not simulation_cost.partner_id:
-            raise exceptions.Warning(_('Customer Error'),
-                                     _('You must assign a customer to the '
+            raise exceptions.Warning(_('You must assign a customer to the '
                                        'simulation'))
         # Switch para saber si tengo que grabar SALE.ORDER
         grabar_sale_order = False
@@ -310,13 +302,11 @@ class SimulationCost(models.Model):
             # NO está asociada a ninguna línea de pedido
             if not cost_line.sale_order_line_id:
                 if not cost_line.product_id:
-                    raise exceptions.Warning(_('Create Sale Order Error'),
-                                             _('On a line of others lines, '
+                    raise exceptions.Warning(_('On a line of others lines, '
                                                'needed to define a purchase '
                                                'product'))
                 if not cost_line.product_sale_id:
-                    raise exceptions.Warning(_('Create Sale Order Error'),
-                                             _('On a line of others lines, '
+                    raise exceptions.Warning(_('On a line of others lines, '
                                                'needed to define a sale '
                                                'product'))
                 grabar_sale_order = True
@@ -406,8 +396,7 @@ class SimulationCost(models.Model):
                         general_datas[(my_product_id)] = my_vals
         # Si noy hay lineas para grabar, muestro el error
         if not grabar_sale_order:
-            raise exceptions.Warning(_('Error'),
-                                     _('No Cost Lines found to Treat'))
+            raise exceptions.Warning(_('No Cost Lines found to Treat'))
         # G R A B O   SALER.ORDER
         # CREO EL OBJETO SALE.ORDER
         # Cojo los datos del cliente
@@ -504,8 +493,7 @@ class SimulationCost(models.Model):
         simulation_cost = self.browse(cr, uid, ids[0], *args)
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise exceptions.Warning(_('Historical Error'),
-                                     _('Already Historical'))
+            raise exceptions.Warning(_('Already Historical'))
         else:
             # Le pongo la fecha del sistema
             fec_histo = time.strftime('%Y-%m-%d')
@@ -531,8 +519,7 @@ class SimulationCost(models.Model):
         simulation_cost_ids = simulation_cost_obj2.search(cr, uid, my_search,
                                                           *args)
         if simulation_cost_ids:
-            raise exceptions.Warning(_('Error Creating Simulation Cost'),
-                                     _('There is a Simulation Cost'))
+            raise exceptions.Warning(_('There is a Simulation Cost'))
         # Copio el objeto simulacion de coste.
         my_vals = {'historical_date': None,
                    'historical_ok': False,
@@ -645,8 +632,7 @@ class SimulationCost(models.Model):
         simulation_cost = self.browse(cr, uid, ids[0])
         # valido que no esté historificado ya
         if simulation_cost.historical_ok:
-            raise exceptions.Warning(_('Error'),
-                                     _('This cost simulation have Historical'))
+            raise exceptions.Warning(_('This cost simulation have Historical'))
         return True
 
 
@@ -734,8 +720,7 @@ class SimulationCostLine(models.Model):
         supplierinfo_obj = self.pool['product.supplierinfo']
         partner_obj = self.pool['res.partner']
         if sale_order_line_id:
-            raise exceptions.Warning(_('Product Error'),
-                                     _('Yo can not modify the product, this '
+            raise exceptions.Warning(_('Yo can not modify the product, this '
                                        'line belongs to a line of sale order'))
         res = {}
         if not product_id or not type:
@@ -851,15 +836,13 @@ class SimulationCostLine(models.Model):
         product_obj = self.pool['product.product']
         pricelist_obj = self.pool['product.pricelist']
         if sale_order_line_id:
-            raise exceptions.Warning(_('Supplier Error'),
-                                     _('You can not modify the supplier, this '
+            raise exceptions.Warning(_('You can not modify the supplier, this '
                                        'line belongs to a line of sale order'))
         res = {}
         if not supplier_id:
             return {'value': res}
         if not product_id:
-            raise exceptions.Warning(_('Supplier Error'),
-                                     _('You must select a product'))
+            raise exceptions.Warning(_('You must select a product'))
         # Accedo a datos del proveedor
         supplier = partner_obj.browse(cr, uid, supplier_id, context=context)
         lang = partner_obj.browse(cr, uid, supplier_id).lang
@@ -934,8 +917,7 @@ class SimulationCostLine(models.Model):
                                        benefit, sale_order_line_id,
                                        purchase_insale, context=None):
         if sale_order_line_id:
-            raise exceptions.Warning(_('Price/Amount Error'),
-                                     _('Yo can not modify the price/ammount, '
+            raise exceptions.Warning(_('You can not modify the price/ammount, '
                                        'this line belongs to a line of sale '
                                        'order'))
         res = {}
@@ -1015,8 +997,7 @@ class SimulationCostLine(models.Model):
                               indirect_cost, context=None):
         product_obj = self.pool['product.product']
         if sale_order_line_id:
-            raise exceptions.Warning(_('Sale Product Error'),
-                                     _('You can not modify the sale product, '
+            raise exceptions.Warning(_('You can not modify the sale product, '
                                        'this line belongs to a line of sale '
                                        'order'))
         res = {}
@@ -1026,8 +1007,7 @@ class SimulationCostLine(models.Model):
         product = product_obj.browse(cr, uid, product_sale_id, context=context)
         if product_sale_id != product_id:
             if not product.sale_ok:
-                raise exceptions.Warning(_('Sale Product Error'),
-                                         _('Product must be to sale OR the '
+                raise exceptions.Warning(_('Product must be to sale OR the '
                                            'same product of purchase'))
         # Calculo el total de la venta
         if product.list_price > 0 and amount > 0:
@@ -1056,8 +1036,7 @@ class SimulationCostLine(models.Model):
                             subtotal_purchase, benefit, sale_order_line_id,
                             amortization_cost, indirect_cost, context=None):
         if sale_order_line_id:
-            raise exceptions.Warning(_('Sale Price Error'),
-                                     _('You can not modify the sale price, '
+            raise exceptions.Warning(_('You can not modify the sale price, '
                                        'this line belongs to a line of sale '
                                        'order'))
 
@@ -1091,8 +1070,7 @@ class SimulationCostLine(models.Model):
                                   sale_order_line_id, amortization_cost,
                                   indirect_cost, context=None):
         if sale_order_line_id:
-            raise exceptions.Warning(_('Estimated Margin Error'),
-                                     _('You can not modify the estimated '
+            raise exceptions.Warning(_('You can not modify the estimated '
                                        'margin, this line belongs to a line '
                                        'of sale order'))
         res = {}

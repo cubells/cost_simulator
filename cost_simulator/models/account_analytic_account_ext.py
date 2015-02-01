@@ -24,7 +24,6 @@ class AccountAnalyticAccountaccount(models.Model):
     _inherit = 'account.analytic.account'
 
     @api.multi
-    @api.depends('name')
     def name_get(self):
         if not self.ids:
             return []

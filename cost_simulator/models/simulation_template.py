@@ -24,7 +24,7 @@ class SimulationTemplate(models.Model):
     _name = 'simulation.template'
     _description = 'Simulation Template'
 
-    name = fields.Char('Name', size=64, required="True", select=True)
+    name = fields.Char('Name', required="True", select=True)
     template_product_id = fields.Many2one('product.product',
                                           'Product for sale')
     others_template_lines_ids = fields.One2many('simulation.template.line',
@@ -38,7 +38,7 @@ class SimulationTemplateLine(models.Model):
 
     template_id = fields.Many2one('simulation.template', 'Template')
     product_id = fields.Many2one('product.product', 'Product', required=True)
-    name = fields.Char('Name', size=64, required=True)
+    name = fields.Char('Name', required=True)
     description = fields.Text('Description')
     amortization_rate = fields.Float('Amortization Rate', digits=(3, 2))
     indirect_cost_rate = fields.Float('Indirect Cost Rate', digits=(3, 2))

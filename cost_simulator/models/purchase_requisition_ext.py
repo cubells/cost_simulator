@@ -45,10 +45,9 @@ class PurchaseRequisition(models.Model):
                 if not supplierinfo_ids:
                     # Si no hay proveedores definidos para el producto, muestro
                     # el error
-                    raise exceptions.Warning(
-                        _('Purchase Order Creation Error'),
-                        _('You must define one supplier for the product: '
-                          '%s') % product.name)
+                    raise exceptions.Warning(_('You must define one supplier '
+                                               'for the product: %s') %
+                                             product.name)
                 else:
                     for supplierinfo_id in supplierinfo_ids:
                         supplierinfo = supplierinfo_obj.browse(
@@ -61,9 +60,8 @@ class PurchaseRequisition(models.Model):
                         purchase_type_ids = purchase_type_obj.search(
                             cr, uid, condition, context=context)
                         if not purchase_type_ids:
-                            raise exceptions.Warning(
-                                _('Purchase Order Creation Error'),
-                                _('Purchase Type NOT FOUND'))
+                            raise exceptions.Warning(_('Purchase Type NOT '
+                                                       'FOUND'))
                         purchase_type = purchase_type_obj.browse(
                             cr, uid, purchase_type_ids[0], context=context)
                         condition = [('partner_id', '=', supplier.id),
@@ -159,8 +157,7 @@ class PurchaseRequisition(models.Model):
                                                    rfq.partner_id.id or None
                                                    for rfq in
                                                    requisition.purchase_ids]):
-                raise exceptions.Warning(_('Purchase Order Creation Error'),
-                                         _('You have already one %s purchase '
+                raise exceptions.Warning(_('You have already one %s purchase '
                                            'order for this partner, you must '
                                            'cancel this purchase order to '
                                            'create a new quotation.')
@@ -170,8 +167,7 @@ class PurchaseRequisition(models.Model):
             purchase_type_ids = purchase_type_obj.search(cr, uid, condition,
                                                          context=context)
             if not purchase_type_ids:
-                raise exceptions.Warning(_('Purchase Order Creation Error'),
-                                         _('Purchase Type NOT FOUND'))
+                raise exceptions.Warning(_('Purchase Type NOT FOUND'))
             purchase_type = purchase_type_obj.browse(
                 cr, uid, purchase_type_ids[0], context=context)
             code = purchase_type.sequence.code

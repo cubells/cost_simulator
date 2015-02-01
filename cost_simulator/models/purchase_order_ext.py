@@ -28,5 +28,6 @@ class PurchaseOrder(models.Model):
     type_cost = fields.Char('Type Cost', size=64)
     type = fields.Many2one('purchase.type', 'Type')
 
+    @api.multi
     def wkf_confirm_order(self):
         return super(PurchaseOrder, self).wkf_confirm_order()
