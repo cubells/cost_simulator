@@ -30,7 +30,6 @@ class PurchaseRequisition(models.Model):
         partner_obj = self.pool['res.partner']
         fiscal_position_obj = self.pool['account.fiscal.position']
         supplierinfo_obj = self.pool['product.supplierinfo']
-        purchase_type_obj = self.pool['purchase.type']
         sequence_obj = self.pool['ir.sequence']
         res = {}
         for requisition in self.browse(cr, uid, ids, context=context):
@@ -56,18 +55,9 @@ class PurchaseRequisition(models.Model):
                             cr, uid, supplierinfo.name.id, context=context)
                         # MIRO SI YA EXISTE UN PEDIDO DE COMPRA PARA EL
                         # PROVEEDOR QUE VIENE DEL PRODUCTO
-                        condition = [('name', '=', 'Purchase')]
-                        purchase_type_ids = purchase_type_obj.search(
-                            cr, uid, condition, context=context)
-                        if not purchase_type_ids:
-                            raise exceptions.Warning(_('Purchase Type NOT '
-                                                       'FOUND'))
-                        purchase_type = purchase_type_obj.browse(
-                            cr, uid, purchase_type_ids[0], context=context)
                         condition = [('partner_id', '=', supplier.id),
                                      ('state', '=', 'draft'),
-                                     ('requisition_id', '=', requisition.id),
-                                     ('type', '=', purchase_type.id)]
+                                     ('requisition_id', '=', requisition.id)]
                         purchase_order_id = purchase_obj.search(
                             cr, uid, condition, context=context)
                         if not purchase_order_id:
@@ -79,26 +69,23 @@ class PurchaseRequisition(models.Model):
                             loc = requisition.warehouse_id.lot_input_id
                             supplier_pricelist = pr or False
                             location_id = loc.id
-                            code = purchase_type.sequence.code
-                            seq = sequence_obj.get(cr, uid, code)
                             # Creo purchase order
                             fpos = (supplier.property_account_position and
                                     supplier.property_account_position.id or
                                     False)
                             warehouse = requisition.warehouse_id
-                            vals = {'origin': requisition.name,
-                                    'partner_id': supplier.id,
-                                    'partner_address_id': delivery_address_id,
-                                    'pricelist_id': supplier_pricelist.id,
-                                    'location_id': location_id,
-                                    'company_id': requisition.company_id.id,
-                                    'fiscal_position': fpos,
-                                    'requisition_id': requisition.id,
-                                    'notes': requisition.description,
-                                    'warehouse_id': warehouse.id,
-                                    'type': purchase_type.id,
-                                    'name': seq,
-                                    }
+                            vals = {
+                                'origin': requisition.name,
+                                'partner_id': supplier.id,
+                                'partner_address_id': delivery_address_id,
+                                'pricelist_id': supplier_pricelist.id,
+                                'location_id': location_id,
+                                'company_id': requisition.company_id.id,
+                                'fiscal_position': fpos,
+                                'requisition_id': requisition.id,
+                                'notes': requisition.description,
+                                'warehouse_id': warehouse.id,
+                            }
                             purchase_id = purchase_obj.create(cr, uid, vals,
                                                               context=context)
                             purchase_order_datas.append(purchase_id)
@@ -143,7 +130,6 @@ class PurchaseRequisition(models.Model):
         purchase_obj = self.pool['purchase.order']
         purchase_line_obj = self.pool['purchase.order.line']
         partner_obj = self.pool['res.partner']
-        purchase_type_obj = self.pool['purchase.type']
         fiscal_position_obj = self.pool['account.fiscal.position']
         sequence_obj = self.pool['ir.sequence']
         supplier = partner_obj.browse(cr, uid, partner_id, context=context)
@@ -164,29 +150,20 @@ class PurchaseRequisition(models.Model):
                                          % requisition.state)
             location_id = requisition.warehouse_id.lot_input_id.id
             condition = [('name', '=', 'Purchase')]
-            purchase_type_ids = purchase_type_obj.search(cr, uid, condition,
-                                                         context=context)
-            if not purchase_type_ids:
-                raise exceptions.Warning(_('Purchase Type NOT FOUND'))
-            purchase_type = purchase_type_obj.browse(
-                cr, uid, purchase_type_ids[0], context=context)
-            code = purchase_type.sequence.code
-            seq = sequence_obj.get(cr, uid, code)
-            vals = {'origin': requisition.name,
-                    'partner_id': supplier.id,
-                    'partner_address_id': delivery_address_id,
-                    'pricelist_id': supplier_pricelist.id,
-                    'location_id': location_id,
-                    'company_id': requisition.company_id.id,
-                    'fiscal_position': (supplier.property_account_position and
-                                        supplier.property_account_position.id
-                                        or False),
-                    'requisition_id': requisition.id,
-                    'notes': requisition.description,
-                    'warehouse_id': requisition.warehouse_id.id,
-                    'type': purchase_type.id,
-                    'name': seq,
-                    }
+            vals = {
+                'origin': requisition.name,
+                'partner_id': supplier.id,
+                'partner_address_id': delivery_address_id,
+                'pricelist_id': supplier_pricelist.id,
+                'location_id': location_id,
+                'company_id': requisition.company_id.id,
+                'fiscal_position': (supplier.property_account_position and
+                                    supplier.property_account_position.id
+                                    or False),
+                'requisition_id': requisition.id,
+                'notes': requisition.description,
+                'warehouse_id': requisition.warehouse_id.id,
+            }
             purchase_id = purchase_obj.create(cr, uid, vals, context=context)
             res[requisition.id] = purchase_id
             for line in requisition.line_ids:

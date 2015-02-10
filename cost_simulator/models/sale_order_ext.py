@@ -392,7 +392,6 @@ class SaleOrder(models.Model):
         purchase_order_obj = self.pool['purchase.order']
         simulation_cost_obj = self.pool['simulation.cost']
         project_project_obj = self.pool['project.project']
-        purchase_type_obj = self.pool['purchase.type']
         purchase_line_obj = self.pool['purchase.order.line']
         supplierinfo_obj = self.pool['product.supplierinfo']
         sequence_obj = self.pool['ir.sequence']
@@ -471,37 +470,23 @@ class SaleOrder(models.Model):
                              'notes': product.description_purchase,
                              'taxes_id': [(6, 0, taxes)],
                              }
-                # Cojo el tipo de pedido de compra
-                if simulation_cost_line.type_cost == 'Others':
-                    condition = [('name', '=', 'Others')]
-                    purchase_type_ids = purchase_type_obj.search(
-                        cr, uid, condition, context=context)
-                    if not purchase_type_ids:
-                        raise exceptions.Warning(_('Others literal not found '
-                                                   'in Table Purchase Type'))
-                purchase_type = purchase_type_obj.browse(cr, uid,
-                                                         purchase_type_ids[0],
-                                                         context=context)
-                # COJO LA SECUENCIA
-                code = purchase_type.sequence.code
-                name = sequence_obj.get(cr, uid, code)
+
                 warehouse = sale_order.shop_id.warehouse_id
                 position = (partner.property_account_position and
                             partner.property_account_position.id) or False
-                po_vals = {'name': name,
-                           'origin': (sale_order.name + ' - ' +
-                                      simulation_cost.simulation_number),
-                           'partner_id': partner_id,
-                           'partner_address_id': address_id,
-                           'location_id': warehouse.lot_stock_id.id,
-                           'warehouse_id': warehouse_id or False,
-                           'pricelist_id': pricelist_id,
-                           'date_order': time.strftime('%Y-%m-%d'),
-                           'company_id': company.id,
-                           'fiscal_position': position,
-                           'type': purchase_type.id,
-                           'type_cost': simulation_cost_line.type_cost
-                           }
+                po_vals = {
+                    'origin': (sale_order.name + ' - ' +
+                               simulation_cost.simulation_number),
+                    'partner_id': partner_id,
+                    'partner_address_id': address_id,
+                    'location_id': warehouse.lot_stock_id.id,
+                    'warehouse_id': warehouse_id or False,
+                    'pricelist_id': pricelist_id,
+                    'date_order': time.strftime('%Y-%m-%d'),
+                    'company_id': company.id,
+                    'fiscal_position': position,
+                    'type_cost': simulation_cost_line.type_cost
+                }
                 pc = self._sale_order_create_purchase_order(cr, uid, po_vals,
                                                             line_vals,
                                                             context=context)
@@ -686,39 +671,24 @@ class SaleOrder(models.Model):
                                      'notes': product.description_purchase,
                                      'taxes_id': [(6, 0, taxes)],
                                      }
-                        # Cojo el tipo de pedido de compra
-                        if simulation_cost_line.type_cost == 'Others':
-                            condition = [('name', '=', 'Others')]
-                            purchase_type_ids = purchase_type_obj.search(
-                                cr, uid, condition, context=context)
-                            if not purchase_type_ids:
-                                raise exceptions.Warning(
-                                    _('Others literal not found in Table '
-                                      'Purchase Type'))
-                        purchase_type = purchase_type_obj.browse(
-                            cr, uid, purchase_type_ids[0], context=context)
-                        # COJO LA SECUENCIA
-                        code = purchase_type.sequence.code
-                        name = sequence_obj.get(cr, uid, code)
                         origin = (sale_order.name + ' - ' +
                                   simulation_cost.simulation_number)
                         warehouse = sale_order.shop_id.warehouse_id
                         fiscal = (partner.property_account_position and
                                   partner.property_account_position.id or
                                   False)
-                        po_vals = {'name': name,
-                                   'origin': origin,
-                                   'partner_id': partner_id,
-                                   'partner_address_id': address_id,
-                                   'location_id': warehouse.lot_stock_id.id,
-                                   'warehouse_id': warehouse_id or False,
-                                   'pricelist_id': pricelist_id,
-                                   'date_order': time.strftime('%Y-%m-%d'),
-                                   'company_id': company.id,
-                                   'fiscal_position': fiscal,
-                                   'type': purchase_type.id,
-                                   'type_cost': simulation_cost_line.type_cost
-                                   }
+                        po_vals = {
+                            'origin': origin,
+                            'partner_id': partner_id,
+                            'partner_address_id': address_id,
+                            'location_id': warehouse.lot_stock_id.id,
+                            'warehouse_id': warehouse_id or False,
+                            'pricelist_id': pricelist_id,
+                            'date_order': time.strftime('%Y-%m-%d'),
+                            'company_id': company.id,
+                            'fiscal_position': fiscal,
+                            'type_cost': simulation_cost_line.type_cost
+                        }
                         pc = self._sale_order_create_purchase_order(
                             cr, uid, po_vals, line_vals, context=context)
                         # AÑADO EL ID DEL SUBPROYECTO AL PEDIDO DE COMPRA
@@ -800,20 +770,7 @@ class SaleOrder(models.Model):
 
     def _sale_order_create_purchase_order(self, cr, uid, po_vals, line_vals,
                                           context=None):
-        purchase_type_obj = self.pool['purchase.type']
         purchase_obj = self.pool['purchase.order']
-        if not po_vals.get('type'):
-            condition = [('name', '=', 'Purchase')]
-            purchase_type_ids = purchase_type_obj.search(cr, uid, condition,
-                                                         context=context)
-            if not purchase_type_ids:
-                raise exceptions.Warning(_('Purchase literal not found in '
-                                           'Table Purchase Type'))
-            else:
-                purchase_type = purchase_type_obj.browse(
-                    cr, uid, purchase_type_ids[0], context=context)
-                po_vals.update({'type': purchase_type.id})
-
         po_vals.update({'order_line': [(0, 0, line_vals)]})
 
         return purchase_obj.create(cr, uid, po_vals, context=context)

@@ -26,7 +26,6 @@ class PurchaseOrder(models.Model):
     project2_id = fields.Many2one('project.project', string='Subsubproject')
     project3_id = fields.Many2one('project.project', string='Project')
     type_cost = fields.Char('Type Cost', size=64)
-    type = fields.Many2one('purchase.type', 'Type')
 
     @api.multi
     def wkf_confirm_order(self):

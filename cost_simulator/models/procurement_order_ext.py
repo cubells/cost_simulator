@@ -161,7 +161,6 @@ class ProcurementOrder(models.Model):
         purchase_line_obj = self.pool['purchase.order.line']
         partner_obj = self.pool['res.partner']
         product_obj = self.pool['product.product']
-        purchase_type_obj = self.pool['purchase.type']
         sequence_obj = self.pool['ir.sequence']
         supplierinfo_obj = self.pool['product.supplierinfo']
         uom_obj = self.pool['product.uom']
@@ -229,27 +228,16 @@ class ProcurementOrder(models.Model):
                 if not sequence_ids:
                     raise exceptions.Warning(_('Purchase Order sequence not '
                                                'found'))
-                sequence = sequence_obj.browse(cr, uid, sequence_ids[0],
-                                               context=context)
-                condition = [('sequence', '=', sequence.id)]
-                ptype_ids = purchase_type_obj.search(cr, uid, condition,
-                                                     context=context, limit=1)
-                if not ptype_ids:
-                    raise exceptions.Warning(_('Purchase Type not found'))
-                purchase_type = purchase_type_obj.browse(
-                    cr, uid, ptype_ids[0], context=context)
-                code = purchase_type.sequence.code
-                seq = sequence_obj.get(cr, uid, code)
                 # MODIFICO EL PEDIDO DE COMPRA AÑADIENDOLE EL CODIGO DE PEDIDO
                 # DE VENTA, EL PROYECTO, Y EL TIPO DE COMPRA
                 pc = res[procurement.id]
-                new_vals = {'name': seq,
-                            'sale_order_id': sale_order.id,
-                            'project3_id': project_id,
-                            'origin': (procurement.origin + ' - ' +
-                                       simulation_cost.simulation_number),
-                            'type_cost': 'Purchase'
-                            }
+                new_vals = {
+                    'sale_order_id': sale_order.id,
+                    'project3_id': project_id,
+                    'origin': (procurement.origin + ' - ' +
+                               simulation_cost.simulation_number),
+                    'type_cost': 'Purchase'
+                }
                 purchase_obj.write(cr, uid, [pc], new_vals, context=context)
                 # COJO EL ID DE LA LINEA DE PEDIDO DE COMPRA QUE SE HA DADO DE
                 # ALTA
@@ -426,37 +414,18 @@ class ProcurementOrder(models.Model):
                         # TRATAMIENTO
                         res = super(ProcurementOrder, self).make_po(
                             cr, uid, [procurement.id], context=context)
-                        # COJO LA SECUENCIA
-                        condition = [('code', '=', 'purchase.order')]
-                        sequence_ids = sequence_obj.search(
-                            cr, uid, condition, context=context, limit=1)
-                        if not sequence_ids:
-                            raise exceptions.Warning(_('Purchase Order '
-                                                       'sequence not found'))
-                        sequence = sequence_obj.browse(
-                            cr, uid, sequence_ids[0], context=context)
-                        condition = [('sequence', '=', sequence.id)]
-                        ptype_ids = purchase_type_obj.search(
-                            cr, uid, condition, context=context, limit=1)
-                        if not ptype_ids:
-                            raise exceptions.Warning(_('Purchase Type not '
-                                                       'found'))
-                        purchase_type = purchase_type_obj.browse(
-                            cr, uid, ptype_ids[0], context=context)
-                        code = purchase_type.sequence.code
-                        seq = sequence_obj.get(cr, uid, code)
                         # MODIFICO EL PEDIDO DE COMPRA AÑADIENDOLE EL CODIGO
                         # DE PROVEEDOR, EL CODIGO DE PEDIDO DE VENTA, EL
                         # PROYECTO, Y EL TIPO DE COMPRA
                         pc = res[procurement.id]
-                        vals = {'name': seq,
-                                'partner_id': partner_id,
-                                'sale_order_id': sale_order.id,
-                                'project3_id': project_id,
-                                'origin': procurement.origin + ' - ' +
-                                simulation_cost.simulation_number,
-                                'type_cost': 'Purchase'
-                                }
+                        vals = {
+                            'partner_id': partner_id,
+                            'sale_order_id': sale_order.id,
+                            'project3_id': project_id,
+                            'origin': procurement.origin + ' - ' +
+                            simulation_cost.simulation_number,
+                            'type_cost': 'Purchase'
+                        }
                         purchase_obj.write(cr, uid, [pc], vals,
                                            context=context)
                         # COJO EL ID DE LA LINEA DE PEDIDO DE COMPRA QUE SE HA
@@ -565,7 +534,6 @@ class ProcurementOrder(models.Model):
         purchase_obj = self.pool['purchase.order']
         purchase_line_obj = self.pool['purchase.order.line']
         product_obj = self.pool['product.product']
-        purchase_type_obj = self.pool['purchase.type']
         sequence_obj = self.pool['ir.sequence']
         supplierinfo_obj = self.pool['product.supplierinfo']
         partner_obj = self.pool['res.partner']
@@ -664,37 +632,22 @@ class ProcurementOrder(models.Model):
                             'notes': product.description_purchase,
                             'taxes_id': [(6, 0, taxes)],
                         }
-                        # Cojo el tipo de pedido de compra
-                        if simulation_cost_line.type_cost == 'Others':
-                            condition = [('name', '=', 'Others')]
-                            purchase_type_ids = purchase_type_obj.search(
-                                cr, uid, condition, context=context)
-                            if not purchase_type_ids:
-                                raise exceptions.Warning(_('Others literal '
-                                                           'not found in Table'
-                                                           ' Purchase Type'))
-                        purchase_type = purchase_type_obj.browse(
-                            cr, uid, purchase_type_ids[0], context=context)
-                        # COJO LA SECUENCIA
-                        code = purchase_type.sequence.code
-                        name = sequence_obj.get(cr, uid, code)
                         sim_number = simulation_cost.simulation_number
                         p = purchase_date
                         dat = p.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
                         pos = (partner.property_account_position and
                                partner.property_account_position.id or False)
-                        po_vals = {'name': name,
-                                   'origin': (procurement.origin + ' - ' +
-                                              sim_number),
-                                   'partner_id': partner_id,
-                                   'location_id': procurement.location_id.id,
-                                   'pricelist_id': pricelist_id,
-                                   'date_order': dat,
-                                   'company_id': procurement.company_id.id,
-                                   'fiscal_position': pos,
-                                   'type': purchase_type.id,
-                                   'type_cost': simulation_cost_line.type_cost
-                                   }
+                        po_vals = {
+                            'origin': (procurement.origin + ' - ' +
+                                       sim_number),
+                            'partner_id': partner_id,
+                            'location_id': procurement.location_id.id,
+                            'pricelist_id': pricelist_id,
+                            'date_order': dat,
+                            'company_id': procurement.company_id.id,
+                            'fiscal_position': pos,
+                            'type_cost': simulation_cost_line.type_cost
+                        }
                         res[procurement.id], purchase_line_id = (
                             self.create_proc_purchaseorder(
                                 cr, uid, procurement, po_vals, line_vals,
@@ -927,21 +880,6 @@ class ProcurementOrder(models.Model):
                                     'notes': product.description_purchase,
                                     'taxes_id': [(6, 0, taxes)],
                                     }
-                                # Cojo el tipo de pedido de compra
-                                if simulation_cost_line.type_cost == 'Others':
-                                    condition = [('name', '=', 'Others')]
-                                    purchase_ids = purchase_type_obj.search(
-                                        cr, uid, condition, context=context)
-                                    if not purchase_ids:
-                                        raise exceptions.Warning(
-                                            _('Others literal not found in '
-                                              'Table Purchase Type'))
-                                purchase_type = purchase_type_obj.browse(
-                                    cr, uid, purchase_ids[0], context=context)
-                                # COJO LA SECUENCIA
-                                code = purchase_type.sequence.code
-                                name = sequence_obj.get(cr, uid, code,
-                                                        context=context)
                                 origin = (procurement.origin + ' - ' +
                                           simulation_cost.simulation_number)
                                 location = procurement.location_id
@@ -952,17 +890,16 @@ class ProcurementOrder(models.Model):
                                         partner.property_account_position.id
                                         or False)
                                 typcost = simulation_cost_line.type_cost
-                                po_vals = {'name': name,
-                                           'origin': origin,
-                                           'partner_id': partner_id,
-                                           'location_id': location.id,
-                                           'pricelist_id': pricelist_id,
-                                           'date_order': dt,
-                                           'company_id': cpny_id,
-                                           'fiscal_position': fpos,
-                                           'type': purchase_type.id,
-                                           'type_cost': typcost
-                                           }
+                                po_vals = {
+                                    'origin': origin,
+                                    'partner_id': partner_id,
+                                    'location_id': location.id,
+                                    'pricelist_id': pricelist_id,
+                                    'date_order': dt,
+                                    'company_id': cpny_id,
+                                    'fiscal_position': fpos,
+                                    'type_cost': typcost
+                                }
                                 prc_id = procurement.id
                                 res[prc_id], purchase_line_id = (
                                     self.create_proc_purchaseorder(
@@ -1088,22 +1025,11 @@ class ProcurementOrder(models.Model):
         # ponemos el campo "type" como de compras (este campo indica
         # que tipo de de pedido de compra es, y servirá para generar
         # el código del pedido de compra
-        purchase_type_obj = self.pool['purchase.type']
         purchase_obj = self.pool['purchase.order']
-        if not po_vals.get('type'):
-            purchase_type_ids = purchase_type_obj.search(
-                cr, uid, [('name', '=', 'Others')], context=context)
-            if not purchase_type_ids:
-                raise exceptions.Warning(_('"Others" literal not found in '
-                                           'Table Purchase Type'))
-            else:
-                purchase_type = purchase_type_obj.browse(
-                    cr, uid, purchase_type_ids[0], context=context)
-                po_vals.update({'type': purchase_type.id})
-
         po_vals.update({'order_line': [(0, 0, line_vals)]})
         purchase_id = purchase_obj.create(cr, uid, po_vals, context=context)
         purchase = purchase_obj.browse(cr, uid, purchase_id, context=context)
+        purchase_line_id = False
         for line in purchase.order_line:
             purchase_line_id = line.id
         return purchase_id, purchase_line_id
