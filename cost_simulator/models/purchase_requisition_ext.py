@@ -30,7 +30,6 @@ class PurchaseRequisition(models.Model):
         partner_obj = self.pool['res.partner']
         fiscal_position_obj = self.pool['account.fiscal.position']
         supplierinfo_obj = self.pool['product.supplierinfo']
-        sequence_obj = self.pool['ir.sequence']
         res = {}
         for requisition in self.browse(cr, uid, ids, context=context):
             purchase_order_datas = []
