@@ -394,7 +394,6 @@ class SaleOrder(models.Model):
         project_project_obj = self.pool['project.project']
         purchase_line_obj = self.pool['purchase.order.line']
         supplierinfo_obj = self.pool['product.supplierinfo']
-        sequence_obj = self.pool['ir.sequence']
         company = user_obj.browse(cr, uid, uid, context=context).company_id
         simulation_cost = simulation_cost_obj.browse(cr, uid,
                                                      w_simulation_cost_id,

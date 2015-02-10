@@ -131,7 +131,6 @@ class PurchaseRequisition(models.Model):
         purchase_line_obj = self.pool['purchase.order.line']
         partner_obj = self.pool['res.partner']
         fiscal_position_obj = self.pool['account.fiscal.position']
-        sequence_obj = self.pool['ir.sequence']
         supplier = partner_obj.browse(cr, uid, partner_id, context=context)
         delivery_address_id = partner_obj.address_get(
             cr, uid, [supplier.id], ['delivery'])['delivery']
@@ -149,7 +148,6 @@ class PurchaseRequisition(models.Model):
                                            'create a new quotation.')
                                          % requisition.state)
             location_id = requisition.warehouse_id.lot_input_id.id
-            condition = [('name', '=', 'Purchase')]
             vals = {
                 'origin': requisition.name,
                 'partner_id': supplier.id,

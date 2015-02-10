@@ -534,7 +534,6 @@ class ProcurementOrder(models.Model):
         purchase_obj = self.pool['purchase.order']
         purchase_line_obj = self.pool['purchase.order.line']
         product_obj = self.pool['product.product']
-        sequence_obj = self.pool['ir.sequence']
         supplierinfo_obj = self.pool['product.supplierinfo']
         partner_obj = self.pool['res.partner']
         acc_pos_obj = self.pool['account.fiscal.position']
